@@ -242,7 +242,8 @@ public class LoanDisbursementService {
                     && !charge.isWaived() && !charge.isFullyPaid();
 
             /*
-             * create a Charge applied transaction if Up front Accrual, None or Cash based accounting is enabled
+             * create a Charge applied transaction only when Up front Accrual accounting is enabled. No accrual
+             * transactions should be created for None or Cash based accounting.
              */
             if (isDisbursementCharge || isTrancheDisbursementCharge) {
                 if (totalFeeChargesDueAtDisbursement.isGreaterThanZero() && !charge.getChargePaymentMode().isPaymentModeAccountTransfer()) {
@@ -253,8 +254,7 @@ public class LoanDisbursementService {
                     chargesPayment.getLoanChargesPaid().add(loanChargePaidBy);
                     disbursentMoney = disbursentMoney.plus(charge.amount());
                 }
-            } else if (disbursedOn.equals(loan.getActualDisbursementDate())
-                    && loan.isNoneOrCashOrUpfrontAccrualAccountingEnabledOnLoanProduct()) {
+            } else if (disbursedOn.equals(loan.getActualDisbursementDate()) && loan.isUpfrontAccrualAccountingEnabledOnLoanProduct()) {
                 final LoanTransaction applyLoanChargeTransaction = loanChargeService.handleChargeAppliedTransaction(loan, charge,
                         disbursedOn);
                 if (applyLoanChargeTransaction != null) {

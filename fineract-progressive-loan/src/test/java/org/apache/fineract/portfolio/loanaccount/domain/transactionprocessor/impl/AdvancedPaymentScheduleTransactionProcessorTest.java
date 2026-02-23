@@ -534,8 +534,6 @@ class AdvancedPaymentScheduleTransactionProcessorTest {
         Money disbursementMoney = Money.of(currency, postMaturityDisbursementAmount);
 
         LoanProductRelatedDetail loanProductRelatedDetail = mock(LoanProductRelatedDetail.class);
-        org.apache.fineract.portfolio.loanproduct.domain.LoanProduct loanProduct = mock(
-                org.apache.fineract.portfolio.loanproduct.domain.LoanProduct.class);
         when(loanProductRelatedDetail.getInstallmentAmountInMultiplesOf()).thenReturn(null);
         when(loanProductRelatedDetail.isEnableDownPayment()).thenReturn(false);
 
