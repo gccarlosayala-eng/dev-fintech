@@ -15,3 +15,5 @@ github:
     - savings
     - social-impact
     - tech4good
+  commits: commits@fineract.apache.org
+  pullrequests: issues@fineract.apache.org
