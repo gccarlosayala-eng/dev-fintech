@@ -41,6 +41,7 @@ import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidati
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.portfolio.client.api.ClientApiConstants;
+import org.apache.fineract.validation.constraints.DateFormatValidator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -229,6 +230,8 @@ public final class ClientDataValidator {
             final JsonArray address = this.fromApiJsonHelper.extractJsonArrayNamed(ClientApiConstants.address, element);
             baseDataValidator.reset().parameter(ClientApiConstants.address).value(address).ignoreIfNull().jsonArrayNotEmpty();
         }
+
+        validateDateFormatWhenPresent(element, dataValidationErrors);
 
         List<ApiParameterError> dataValidationErrorsForClientNonPerson = getDataValidationErrorsForCreateOnClientNonPerson(
                 element.getAsJsonObject().get(ClientApiConstants.clientNonPersonDetailsParamName));
@@ -513,6 +516,8 @@ public final class ClientDataValidator {
             baseDataValidator.reset().parameter("isStaff").value(isStaffFlag).notNull();
         }
 
+        validateDateFormatWhenPresent(element, dataValidationErrors);
+
         Map<String, Object> parameterUpdateStatusDetails = getParameterUpdateStatusAndDataValidationErrorsForUpdateOnClientNonPerson(
                 element.getAsJsonObject().get(ClientApiConstants.clientNonPersonDetailsParamName));
         boolean atLeastOneParameterPassedForClientNonPersonUpdate = (boolean) parameterUpdateStatusDetails.get("parameterUpdateStatus");
@@ -602,6 +607,21 @@ public final class ClientDataValidator {
         baseDataValidator.reset().parameter(ClientApiConstants.activationDateParamName).value(activationDate).notNull();
 
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
+    }
+
+    private void validateDateFormatWhenPresent(final JsonElement element, final List<ApiParameterError> dataValidationErrors) {
+        if (!this.fromApiJsonHelper.parameterExists(ClientApiConstants.dateFormatParamName, element)) {
+            return;
+        }
+        final String dateFormat = this.fromApiJsonHelper.extractStringNamed(ClientApiConstants.dateFormatParamName, element);
+        if (StringUtils.isBlank(dateFormat)) {
+            return;
+        }
+        if (!DateFormatValidator.isValidPattern(dateFormat)) {
+            final String message = "Invalid dateFormat: `" + dateFormat + "`. Use a valid Java date/time pattern (e.g. dd MMMM yyyy).";
+            dataValidationErrors.add(ApiParameterError.parameterError("validation.msg.invalid.dateFormat.format", message,
+                    ClientApiConstants.dateFormatParamName));
+        }
     }
 
     private void throwExceptionIfValidationWarningsExist(final List<ApiParameterError> dataValidationErrors) {
