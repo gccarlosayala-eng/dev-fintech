@@ -73,6 +73,7 @@ import org.apache.fineract.client.services.ExternalEventConfigurationApi;
 import org.apache.fineract.client.services.ExternalServicesApi;
 import org.apache.fineract.client.services.FetchAuthenticatedUserDetailsApi;
 import org.apache.fineract.client.services.FixedDepositAccountApi;
+import org.apache.fineract.client.services.FixedDepositAccountTransactionsApi;
 import org.apache.fineract.client.services.FixedDepositProductApi;
 import org.apache.fineract.client.services.FloatingRatesApi;
 import org.apache.fineract.client.services.GeneralLedgerAccountApi;
@@ -247,6 +248,7 @@ public final class FineractClient {
     public final ProvisioningCriteriaApi provisioningCriterias;
     public final ProvisioningEntriesApi provisioningEntries;
     public final RecurringDepositAccountApi recurringDepositAccounts;
+    public final FixedDepositAccountTransactionsApi fixedDepositAccountTransactions;
     public final RecurringDepositAccountTransactionsApi recurringDepositAccountTransactions;
     public final RecurringDepositProductApi recurringDepositProducts;
     public final ReportMailingJobsApi reportMailingJobs;
@@ -367,6 +369,7 @@ public final class FineractClient {
         provisioningCriterias = retrofit.create(ProvisioningCriteriaApi.class);
         provisioningEntries = retrofit.create(ProvisioningEntriesApi.class);
         recurringDepositAccounts = retrofit.create(RecurringDepositAccountApi.class);
+        fixedDepositAccountTransactions = retrofit.create(FixedDepositAccountTransactionsApi.class);
         recurringDepositAccountTransactions = retrofit.create(RecurringDepositAccountTransactionsApi.class);
         recurringDepositProducts = retrofit.create(RecurringDepositProductApi.class);
         reportMailingJobs = retrofit.create(ReportMailingJobsApi.class);

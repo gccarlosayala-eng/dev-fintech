@@ -160,7 +160,7 @@ public class FixedDepositAccountTransactionsApiResource {
 
         CommandProcessingResult result = null;
         if (is(commandParam, DepositsApiConstants.COMMAND_UNDO_TRANSACTION)) {
-            final CommandWrapper commandRequest = builder.undoSavingsAccountTransaction(fixedDepositAccountId, transactionId).build();
+            final CommandWrapper commandRequest = builder.undoFixedDepositAccountTransaction(fixedDepositAccountId, transactionId).build();
             result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
         } else if (is(commandParam, DepositsApiConstants.COMMAND_ADJUST_TRANSACTION)) {
             final CommandWrapper commandRequest = builder.adjustSavingsAccountTransaction(fixedDepositAccountId, transactionId).build();
