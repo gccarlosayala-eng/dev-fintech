@@ -113,6 +113,7 @@ import org.apache.fineract.client.services.PasswordPreferencesApi;
 import org.apache.fineract.client.services.PaymentTypeApi;
 import org.apache.fineract.client.services.PeriodicAccrualAccountingApi;
 import org.apache.fineract.client.services.PermissionsApi;
+import org.apache.fineract.client.services.ProductsApi;
 import org.apache.fineract.client.services.ProgressiveLoanApi;
 import org.apache.fineract.client.services.ProvisioningCategoryApi;
 import org.apache.fineract.client.services.ProvisioningCriteriaApi;
@@ -262,6 +263,7 @@ public final class FineractClient {
     public final SchedulerJobApi jobs;
     public final ScoreCardApi surveyScorecards;
     public final SearchApiApi search;
+    public final ProductsApi shareProducts;
     public final ShareAccountApi shareAccounts;
     public final SpmApiLookUpTableApi surveyLookupTables;
     public final SpmSurveysApi surveys;
@@ -381,6 +383,7 @@ public final class FineractClient {
         jobsScheduler = retrofit.create(SchedulerApi.class);
         surveyScorecards = retrofit.create(ScoreCardApi.class);
         search = retrofit.create(SearchApiApi.class);
+        shareProducts = retrofit.create(ProductsApi.class);
         shareAccounts = retrofit.create(ShareAccountApi.class);
         surveyLookupTables = retrofit.create(SpmApiLookUpTableApi.class);
         surveys = retrofit.create(SpmSurveysApi.class);
