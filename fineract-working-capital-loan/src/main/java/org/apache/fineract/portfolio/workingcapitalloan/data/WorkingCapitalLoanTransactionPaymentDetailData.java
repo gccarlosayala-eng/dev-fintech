@@ -16,20 +16,26 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.portfolio.workingcapitalloan.service;
+package org.apache.fineract.portfolio.workingcapitalloan.data;
 
-import org.apache.fineract.infrastructure.core.api.JsonCommand;
-import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
+import java.io.Serializable;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-public interface WorkingCapitalLoanWritePlatformService {
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class WorkingCapitalLoanTransactionPaymentDetailData implements Serializable {
 
-    CommandProcessingResult approveApplication(Long loanId, JsonCommand command);
-
-    CommandProcessingResult undoApplicationApproval(Long loanId, JsonCommand command);
-
-    CommandProcessingResult rejectApplication(Long loanId, JsonCommand command);
-
-    CommandProcessingResult disburseLoan(Long loanId, JsonCommand command);
-
-    CommandProcessingResult undoDisbursal(Long loanId, JsonCommand command);
+    private Long id;
+    private String accountNumber;
+    private String checkNumber;
+    private String routingCode;
+    private String receiptNumber;
+    private String bankNumber;
 }
