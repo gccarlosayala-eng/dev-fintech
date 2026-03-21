@@ -984,8 +984,11 @@ public class LoansApiResource {
         if (templateType == null) {
             final String errorMsg = "Loan template type must be provided";
             throw new LoanTemplateTypeRequiredException(errorMsg);
-        } else if (templateType.equals("approval")) {
+        } else if ("approval".equals(templateType)) {
             loanApprovalTemplate = this.loanReadPlatformService.retrieveApprovalTemplate(resolvedLoanId);
+        } else {
+            final String errorMsg = "Loan template type '" + templateType + "' is not supported";
+            throw new NotSupportedLoanTemplateTypeException(errorMsg, templateType);
         }
 
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
