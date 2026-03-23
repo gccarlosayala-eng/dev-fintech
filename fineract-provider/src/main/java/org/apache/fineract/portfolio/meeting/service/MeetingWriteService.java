@@ -16,14 +16,20 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+package org.apache.fineract.portfolio.meeting.service;
 
-dependencies {
-    implementation(project(':custom:acme:note:service'))
-    implementation('org.springframework.boot:spring-boot-starter')
-    testImplementation(project(':fineract-core'))
-    testImplementation(project(':fineract-loan'))
-    testImplementation(project(':fineract-savings'))
-    testImplementation(project(':fineract-provider'))
-    testImplementation('org.springframework.boot:spring-boot-starter-jdbc')
-    testImplementation('org.springframework.boot:spring-boot-starter-data-jpa')
+import org.apache.fineract.portfolio.meeting.data.MeetingCreateRequest;
+import org.apache.fineract.portfolio.meeting.data.MeetingCreateResponse;
+import org.apache.fineract.portfolio.meeting.data.MeetingDeleteRequest;
+import org.apache.fineract.portfolio.meeting.data.MeetingDeleteResponse;
+import org.apache.fineract.portfolio.meeting.data.MeetingUpdateRequest;
+import org.apache.fineract.portfolio.meeting.data.MeetingUpdateResponse;
+
+public interface MeetingWriteService {
+
+    MeetingCreateResponse createMeeting(MeetingCreateRequest request);
+
+    MeetingUpdateResponse updateMeeting(MeetingUpdateRequest request);
+
+    MeetingDeleteResponse deleteMeeting(MeetingDeleteRequest request);
 }

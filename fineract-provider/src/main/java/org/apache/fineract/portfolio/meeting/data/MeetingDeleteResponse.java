@@ -20,30 +20,19 @@ package org.apache.fineract.portfolio.meeting.data;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.time.LocalDate;
-import java.util.Collection;
-import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.apache.fineract.infrastructure.core.data.EnumOptionData;
-import org.apache.fineract.portfolio.calendar.data.CalendarData;
-import org.apache.fineract.portfolio.client.data.ClientData;
 
 @Builder
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class MeetingData implements Serializable {
+public class MeetingDeleteResponse implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;
 
-    private Long id;
-    private LocalDate meetingDate;
-    private Collection<MeetingAttendanceData> clientsAttendance;
-    private Collection<ClientData> clients;
-    private CalendarData calendarData;
-    private List<EnumOptionData> attendanceTypeOptions;
+    private Long entityId;
 }

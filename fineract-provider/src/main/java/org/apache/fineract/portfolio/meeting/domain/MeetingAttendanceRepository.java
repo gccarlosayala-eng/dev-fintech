@@ -16,14 +16,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+package org.apache.fineract.portfolio.meeting.domain;
 
-dependencies {
-    implementation(project(':custom:acme:note:service'))
-    implementation('org.springframework.boot:spring-boot-starter')
-    testImplementation(project(':fineract-core'))
-    testImplementation(project(':fineract-loan'))
-    testImplementation(project(':fineract-savings'))
-    testImplementation(project(':fineract-provider'))
-    testImplementation('org.springframework.boot:spring-boot-starter-jdbc')
-    testImplementation('org.springframework.boot:spring-boot-starter-data-jpa')
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+
+public interface MeetingAttendanceRepository extends JpaRepository<MeetingAttendance, Long>, JpaSpecificationExecutor<MeetingAttendance> {
+
 }

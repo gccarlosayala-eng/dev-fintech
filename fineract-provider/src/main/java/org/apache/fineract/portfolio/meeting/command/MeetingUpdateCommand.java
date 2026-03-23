@@ -16,14 +16,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+package org.apache.fineract.portfolio.meeting.command;
 
-dependencies {
-    implementation(project(':custom:acme:note:service'))
-    implementation('org.springframework.boot:spring-boot-starter')
-    testImplementation(project(':fineract-core'))
-    testImplementation(project(':fineract-loan'))
-    testImplementation(project(':fineract-savings'))
-    testImplementation(project(':fineract-provider'))
-    testImplementation('org.springframework.boot:spring-boot-starter-jdbc')
-    testImplementation('org.springframework.boot:spring-boot-starter-data-jpa')
-}
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import org.apache.fineract.command.core.Command;
+import org.apache.fineract.portfolio.meeting.data.MeetingUpdateRequest;
+
+@Data
+@EqualsAndHashCode(callSuper = true)
+public class MeetingUpdateCommand extends Command<MeetingUpdateRequest> {}
