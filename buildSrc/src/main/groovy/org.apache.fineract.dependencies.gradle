@@ -73,7 +73,7 @@ dependencyManagement {
         dependency 'org.quartz-scheduler:quartz:2.5.0'
         dependency 'org.ehcache:ehcache:3.10.8'
         dependency 'com.github.spullara.mustache.java:compiler:0.9.14'
-        dependency 'com.jayway.jsonpath:json-path:2.9.0'
+        dependency 'com.jayway.jsonpath:json-path:3.0.0'
         dependency ('org.apache.tika:tika-core:3.2.3') {
             exclude 'commons-logging:commons-logging'
         }
