@@ -15,10 +15,6 @@ github:
     - savings
     - social-impact
     - tech4good
-notifications:
-  commits: commits@fineract.apache.org
-  pullrequests: issues@fineract.apache.org
-github:
   enabled_merge_buttons:
     merge: true
     squash: false
@@ -28,3 +24,6 @@ github:
       required_linear_history: false
       required_signatures: true
       required_conversation_resolution: true
+notifications:
+  commits: commits@fineract.apache.org
+  pullrequests: issues@fineract.apache.org
