@@ -18,40 +18,36 @@
  */
 package org.apache.fineract.portfolio.meeting.domain;
 
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
-import java.time.LocalDate;
-import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
-import org.apache.fineract.portfolio.calendar.domain.CalendarInstance;
+import org.apache.fineract.portfolio.client.domain.Client;
 
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
 @Setter
 @Entity
-@Table(name = "m_meeting", uniqueConstraints = {
-        @UniqueConstraint(columnNames = { "calendar_instance_id", "meeting_date" }, name = "unique_calendar_instance_id_meeting_date") })
-public class Meeting extends AbstractPersistableCustom<Long> {
+@Table(name = "m_client_attendance", uniqueConstraints = {
+        @UniqueConstraint(columnNames = { "client_id", "meeting_id" }, name = "unique_client_meeting_attendance") })
+public class MeetingAttendance extends AbstractPersistableCustom<Long> {
 
     @ManyToOne
-    @JoinColumn(name = "calendar_instance_id", nullable = false)
-    private CalendarInstance calendarInstance;
+    @JoinColumn(name = "client_id", nullable = false)
+    private Client client;
 
-    @Column(name = "meeting_date", nullable = false)
-    private LocalDate meetingDate;
+    @ManyToOne
+    @JoinColumn(name = "meeting_id", nullable = false)
+    private Meeting meeting;
 
-    @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL, mappedBy = "meeting", orphanRemoval = true)
-    private Set<MeetingAttendance> clientsAttendance;
+    @Column(name = "attendance_type_enum", nullable = false)
+    private Integer attendanceTypeId;
 }

@@ -18,32 +18,32 @@
  */
 package org.apache.fineract.portfolio.meeting.data;
 
+import io.swagger.v3.oas.annotations.Hidden;
 import java.io.Serial;
 import java.io.Serializable;
-import java.time.LocalDate;
-import java.util.Collection;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.apache.fineract.infrastructure.core.data.EnumOptionData;
-import org.apache.fineract.portfolio.calendar.data.CalendarData;
-import org.apache.fineract.portfolio.client.data.ClientData;
+import org.apache.fineract.portfolio.calendar.domain.CalendarEntityType;
 
 @Builder
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class MeetingData implements Serializable {
+public class MeetingAttendanceUpdateRequest implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;
 
     private Long id;
-    private LocalDate meetingDate;
-    private Collection<MeetingAttendanceData> clientsAttendance;
-    private Collection<ClientData> clients;
-    private CalendarData calendarData;
-    private List<EnumOptionData> attendanceTypeOptions;
+    @Hidden
+    private Long entityId;
+    @Hidden
+    private CalendarEntityType entityType;
+    @Hidden
+    // @NotNull(message = "{org.apache.fineract.portfolio.meeting.attendance.id.not-null}")
+    private List<MeetingAttendanceData> meetingAttendance;
+    private Integer attendanceType;
 }

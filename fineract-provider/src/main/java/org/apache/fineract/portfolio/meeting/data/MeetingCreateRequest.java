@@ -18,32 +18,37 @@
  */
 package org.apache.fineract.portfolio.meeting.data;
 
+import io.swagger.v3.oas.annotations.Hidden;
+import jakarta.validation.constraints.NotNull;
 import java.io.Serial;
 import java.io.Serializable;
-import java.time.LocalDate;
-import java.util.Collection;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.apache.fineract.infrastructure.core.data.EnumOptionData;
-import org.apache.fineract.portfolio.calendar.data.CalendarData;
-import org.apache.fineract.portfolio.client.data.ClientData;
+import org.apache.fineract.portfolio.calendar.domain.CalendarEntityType;
 
 @Builder
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class MeetingData implements Serializable {
+public class MeetingCreateRequest implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;
 
-    private Long id;
-    private LocalDate meetingDate;
-    private Collection<MeetingAttendanceData> clientsAttendance;
-    private Collection<ClientData> clients;
-    private CalendarData calendarData;
-    private List<EnumOptionData> attendanceTypeOptions;
+    @Hidden
+    private Long entityId;
+    @Hidden
+    private CalendarEntityType entityType;
+    @NotNull(message = "{org.apache.fineract.portfolio.meeting.calendar-id.not-null}")
+    private Long calendarId;
+    @NotNull(message = "{org.apache.fineract.portfolio.meeting.meeting-date.not-null}")
+    private String meetingDate;
+    @NotNull(message = "{org.apache.fineract.portfolio.meeting.date-format.not-null}")
+    private String dateFormat;
+    @NotNull(message = "{org.apache.fineract.portfolio.meeting.locale.not-null}")
+    private String locale;
+    private List<MeetingAttendanceData> clientsAttendance;
 }

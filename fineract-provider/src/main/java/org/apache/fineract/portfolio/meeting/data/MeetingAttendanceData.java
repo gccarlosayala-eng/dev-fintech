@@ -18,32 +18,28 @@
  */
 package org.apache.fineract.portfolio.meeting.data;
 
+import jakarta.validation.constraints.NotNull;
 import java.io.Serial;
 import java.io.Serializable;
-import java.time.LocalDate;
-import java.util.Collection;
-import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
-import org.apache.fineract.portfolio.calendar.data.CalendarData;
-import org.apache.fineract.portfolio.client.data.ClientData;
 
 @Builder
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class MeetingData implements Serializable {
+public class MeetingAttendanceData implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;
 
     private Long id;
-    private LocalDate meetingDate;
-    private Collection<MeetingAttendanceData> clientsAttendance;
-    private Collection<ClientData> clients;
-    private CalendarData calendarData;
-    private List<EnumOptionData> attendanceTypeOptions;
+    @NotNull(message = "{org.apache.fineract.portfolio.meeting.attendance.client-id.not-null}")
+    private Long clientId;
+    private String clientName;
+    @NotNull(message = "{org.apache.fineract.portfolio.meeting.attendance.attendance-type.not-null}")
+    private EnumOptionData attendanceType;
 }
