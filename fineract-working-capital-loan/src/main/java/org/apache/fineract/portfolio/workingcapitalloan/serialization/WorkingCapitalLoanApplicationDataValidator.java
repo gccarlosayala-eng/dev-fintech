@@ -87,7 +87,8 @@ public class WorkingCapitalLoanApplicationDataValidator {
             WorkingCapitalLoanProductConstants.delinquencyBucketIdParamName, WorkingCapitalLoanProductConstants.repaymentEveryParamName,
             WorkingCapitalLoanProductConstants.repaymentFrequencyTypeParamName, WorkingCapitalLoanConstants.submittedOnNoteParameterName,
             WorkingCapitalLoanProductConstants.allowAttributeOverridesParamName,
-            WorkingCapitalLoanProductConstants.paymentAllocationParamName));
+            WorkingCapitalLoanProductConstants.paymentAllocationParamName, WorkingCapitalLoanProductConstants.delinquencyGraceDaysParamName,
+            WorkingCapitalLoanProductConstants.delinquencyStartTypeParamName));
 
     private final FromJsonHelper fromApiJsonHelper;
     private final WorkingCapitalPaymentAllocationDataValidator paymentAllocationDataValidator;
