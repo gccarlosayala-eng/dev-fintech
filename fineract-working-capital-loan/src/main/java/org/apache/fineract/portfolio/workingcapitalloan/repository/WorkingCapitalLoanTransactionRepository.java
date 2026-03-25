@@ -28,9 +28,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface WorkingCapitalLoanTransactionRepository extends JpaRepository<WorkingCapitalLoanTransaction, Long> {
 
-    List<WorkingCapitalLoanTransaction> findByWcLoan_IdOrderByDateOfAscIdAsc(Long wcLoanId);
+    List<WorkingCapitalLoanTransaction> findByWcLoan_IdOrderByTransactionDateAscIdAsc(Long wcLoanId);
 
-    Page<WorkingCapitalLoanTransaction> findByWcLoan_IdOrderByDateOfAscIdAsc(Long wcLoanId, Pageable pageable);
+    Page<WorkingCapitalLoanTransaction> findByWcLoan_IdOrderByTransactionDateAscIdAsc(Long wcLoanId, Pageable pageable);
 
     Optional<WorkingCapitalLoanTransaction> findByIdAndWcLoan_Id(Long id, Long wcLoanId);
 

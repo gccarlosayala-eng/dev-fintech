@@ -40,6 +40,8 @@ import org.apache.fineract.infrastructure.core.service.ExternalIdFactory;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.client.exception.ClientNotActiveException;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionType;
+import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetail;
+import org.apache.fineract.portfolio.paymentdetail.service.PaymentDetailWritePlatformService;
 import org.apache.fineract.portfolio.workingcapitalloan.WorkingCapitalLoanConstants;
 import org.apache.fineract.portfolio.workingcapitalloan.domain.WorkingCapitalLoan;
 import org.apache.fineract.portfolio.workingcapitalloan.domain.WorkingCapitalLoanBalance;
@@ -49,13 +51,11 @@ import org.apache.fineract.portfolio.workingcapitalloan.domain.WorkingCapitalLoa
 import org.apache.fineract.portfolio.workingcapitalloan.domain.WorkingCapitalLoanNote;
 import org.apache.fineract.portfolio.workingcapitalloan.domain.WorkingCapitalLoanTransaction;
 import org.apache.fineract.portfolio.workingcapitalloan.domain.WorkingCapitalLoanTransactionAllocation;
-import org.apache.fineract.portfolio.workingcapitalloan.domain.WorkingCapitalLoanTransactionPaymentDetail;
 import org.apache.fineract.portfolio.workingcapitalloan.exception.WorkingCapitalLoanNotFoundException;
 import org.apache.fineract.portfolio.workingcapitalloan.repository.WorkingCapitalLoanBalanceRepository;
 import org.apache.fineract.portfolio.workingcapitalloan.repository.WorkingCapitalLoanNoteRepository;
 import org.apache.fineract.portfolio.workingcapitalloan.repository.WorkingCapitalLoanRepository;
 import org.apache.fineract.portfolio.workingcapitalloan.repository.WorkingCapitalLoanTransactionAllocationRepository;
-import org.apache.fineract.portfolio.workingcapitalloan.repository.WorkingCapitalLoanTransactionPaymentDetailRepository;
 import org.apache.fineract.portfolio.workingcapitalloan.repository.WorkingCapitalLoanTransactionRepository;
 import org.apache.fineract.portfolio.workingcapitalloan.serialization.WorkingCapitalLoanDataValidator;
 import org.apache.fineract.portfolio.workingcapitalloanproduct.domain.WorkingCapitalLoanProduct;
@@ -78,7 +78,7 @@ public class WorkingCapitalLoanWritePlatformServiceImpl implements WorkingCapita
     private final ExternalIdFactory externalIdFactory;
     private final WorkingCapitalLoanTransactionRepository transactionRepository;
     private final WorkingCapitalLoanTransactionAllocationRepository allocationRepository;
-    private final WorkingCapitalLoanTransactionPaymentDetailRepository paymentDetailRepository;
+    private final PaymentDetailWritePlatformService paymentDetailService;
     private final WorkingCapitalLoanBalanceRepository balanceRepository;
     private final WorkingCapitalLoanAmortizationScheduleWriteService amortizationScheduleWriteService;
 
@@ -136,9 +136,15 @@ public class WorkingCapitalLoanWritePlatformServiceImpl implements WorkingCapita
 
         log.debug("Working capital loan {} approved by user {}", loanId, currentUser.getId());
 
-        return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(loanId)
-                .withEntityExternalId(loan.getExternalId()).withOfficeId(loan.getOfficeId()).withClientId(loan.getClientId())
-                .withLoanId(loanId).with(changes).build();
+        return new CommandProcessingResultBuilder() //
+                .withCommandId(command.commandId()) //
+                .withEntityId(loanId) //
+                .withEntityExternalId(loan.getExternalId()) //
+                .withOfficeId(loan.getOfficeId()) //
+                .withClientId(loan.getClientId()) //
+                .withLoanId(loanId) //
+                .with(changes) //
+                .build();
     }
 
     @Override
@@ -171,9 +177,15 @@ public class WorkingCapitalLoanWritePlatformServiceImpl implements WorkingCapita
 
         log.debug("Working capital loan {} approval undone", loanId);
 
-        return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(loanId)
-                .withEntityExternalId(loan.getExternalId()).withOfficeId(loan.getOfficeId()).withClientId(loan.getClientId())
-                .withLoanId(loanId).with(changes).build();
+        return new CommandProcessingResultBuilder() //
+                .withCommandId(command.commandId()) //
+                .withEntityId(loanId) //
+                .withEntityExternalId(loan.getExternalId()) //
+                .withOfficeId(loan.getOfficeId()) //
+                .withClientId(loan.getClientId()) //
+                .withLoanId(loanId) //
+                .with(changes) //
+                .build();
     }
 
     @Override
@@ -201,9 +213,15 @@ public class WorkingCapitalLoanWritePlatformServiceImpl implements WorkingCapita
 
         log.debug("Working capital loan {} rejected by user {}", loanId, currentUser.getId());
 
-        return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(loanId)
-                .withEntityExternalId(loan.getExternalId()).withOfficeId(loan.getOfficeId()).withClientId(loan.getClientId())
-                .withLoanId(loanId).with(changes).build();
+        return new CommandProcessingResultBuilder() //
+                .withCommandId(command.commandId()) //
+                .withEntityId(loanId) //
+                .withEntityExternalId(loan.getExternalId()) //
+                .withOfficeId(loan.getOfficeId()) //
+                .withClientId(loan.getClientId()) //
+                .withLoanId(loanId) //
+                .with(changes) //
+                .build();
     }
 
     @Transactional
@@ -229,7 +247,7 @@ public class WorkingCapitalLoanWritePlatformServiceImpl implements WorkingCapita
         final Map<String, Object> changes = new LinkedHashMap<>();
         changes.put(WorkingCapitalLoanConstants.actualDisbursementDateParamName, actualDisbursementDate);
         changes.put(WorkingCapitalLoanConstants.transactionAmountParamName, transactionAmount);
-        final WorkingCapitalLoanTransactionPaymentDetail paymentDetail = createAndPersistPaymentDetailFromCommand(command, changes);
+        final PaymentDetail paymentDetail = createAndPersistPaymentDetailFromCommand(command, changes);
 
         this.stateMachine.transition(WorkingCapitalLoanEvent.LOAN_DISBURSED, loan);
 
@@ -325,53 +343,22 @@ public class WorkingCapitalLoanWritePlatformServiceImpl implements WorkingCapita
 
         log.debug("Working capital loan {} disbursal undone", loanId);
 
-        return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(loanId)
-                .withEntityExternalId(loan.getExternalId()).withLoanId(loanId).with(changes).build();
+        return new CommandProcessingResultBuilder() //
+                .withCommandId(command.commandId()) //
+                .withEntityId(loanId) //
+                .withEntityExternalId(loan.getExternalId()) //
+                .withLoanId(loanId) //
+                .with(changes) //
+                .build();
     }
 
-    private WorkingCapitalLoanTransactionPaymentDetail createAndPersistPaymentDetailFromCommand(final JsonCommand command,
-            final Map<String, Object> changes) {
+    private PaymentDetail createAndPersistPaymentDetailFromCommand(final JsonCommand command, final Map<String, Object> changes) {
         final JsonElement paymentDetailsElement = command.jsonElement(WorkingCapitalLoanConstants.paymentDetailsParamName);
         if (paymentDetailsElement != null && paymentDetailsElement.isJsonObject()) {
             final JsonCommand paymentDetailsCommand = JsonCommand.fromExistingCommand(command, paymentDetailsElement);
-            return createAndPersistWclPaymentDetail(paymentDetailsCommand, changes);
+            return paymentDetailService.createPaymentDetail(paymentDetailsCommand, changes);
         }
-        return createAndPersistWclPaymentDetail(command, changes);
-    }
-
-    private WorkingCapitalLoanTransactionPaymentDetail createAndPersistWclPaymentDetail(final JsonCommand paymentDetailsCommand,
-            final Map<String, Object> changes) {
-        final String accountNumber = paymentDetailsCommand.stringValueOfParameterNamed(WorkingCapitalLoanConstants.accountNumberParamName);
-        final String checkNumber = paymentDetailsCommand.stringValueOfParameterNamed(WorkingCapitalLoanConstants.checkNumberParamName);
-        final String routingCode = paymentDetailsCommand.stringValueOfParameterNamed(WorkingCapitalLoanConstants.routingCodeParamName);
-        final String receiptNumber = paymentDetailsCommand.stringValueOfParameterNamed(WorkingCapitalLoanConstants.receiptNumberParamName);
-        final String bankNumber = paymentDetailsCommand.stringValueOfParameterNamed(WorkingCapitalLoanConstants.bankNumberParamName);
-
-        final boolean hasAny = StringUtils.isNotBlank(accountNumber) || StringUtils.isNotBlank(checkNumber)
-                || StringUtils.isNotBlank(routingCode) || StringUtils.isNotBlank(receiptNumber) || StringUtils.isNotBlank(bankNumber);
-        if (!hasAny) {
-            return null;
-        }
-
-        if (StringUtils.isNotBlank(accountNumber)) {
-            changes.put(WorkingCapitalLoanConstants.accountNumberParamName, accountNumber);
-        }
-        if (StringUtils.isNotBlank(checkNumber)) {
-            changes.put(WorkingCapitalLoanConstants.checkNumberParamName, checkNumber);
-        }
-        if (StringUtils.isNotBlank(routingCode)) {
-            changes.put(WorkingCapitalLoanConstants.routingCodeParamName, routingCode);
-        }
-        if (StringUtils.isNotBlank(receiptNumber)) {
-            changes.put(WorkingCapitalLoanConstants.receiptNumberParamName, receiptNumber);
-        }
-        if (StringUtils.isNotBlank(bankNumber)) {
-            changes.put(WorkingCapitalLoanConstants.bankNumberParamName, bankNumber);
-        }
-
-        final WorkingCapitalLoanTransactionPaymentDetail detail = WorkingCapitalLoanTransactionPaymentDetail.of(accountNumber, checkNumber,
-                routingCode, receiptNumber, bankNumber);
-        return this.paymentDetailRepository.saveAndFlush(detail);
+        return paymentDetailService.createPaymentDetail(command, changes);
     }
 
     private void updateBalanceOnDisburse(final WorkingCapitalLoan loan, final BigDecimal disbursedAmount) {
@@ -385,7 +372,7 @@ public class WorkingCapitalLoanWritePlatformServiceImpl implements WorkingCapita
 
     private void reverseDisbursementTransactionsAndResetBalance(final WorkingCapitalLoan loan) {
         final List<WorkingCapitalLoanTransaction> transactions = this.transactionRepository
-                .findByWcLoan_IdOrderByDateOfAscIdAsc(loan.getId());
+                .findByWcLoan_IdOrderByTransactionDateAscIdAsc(loan.getId());
         for (WorkingCapitalLoanTransaction txn : transactions) {
             if (txn.getTypeOf() == LoanTransactionType.DISBURSEMENT && !txn.isReversed()) {
                 txn.setReversed(true);

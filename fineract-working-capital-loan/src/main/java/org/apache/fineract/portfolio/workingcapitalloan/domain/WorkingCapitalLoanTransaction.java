@@ -38,6 +38,7 @@ import org.apache.fineract.infrastructure.core.domain.AbstractAuditableWithUTCDa
 import org.apache.fineract.infrastructure.core.domain.ExternalId;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionType;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionTypeConverter;
+import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetail;
 
 @Entity
 @Table(name = "m_wc_loan_transaction", uniqueConstraints = {
@@ -54,7 +55,7 @@ public class WorkingCapitalLoanTransaction extends AbstractAuditableWithUTCDateT
     private LoanTransactionType transactionType;
 
     @Column(name = "transaction_date", nullable = false)
-    private LocalDate dateOf;
+    private LocalDate transactionDate;
 
     @Column(name = "submitted_on_date", nullable = false)
     private LocalDate submittedOnDate;
@@ -64,7 +65,7 @@ public class WorkingCapitalLoanTransaction extends AbstractAuditableWithUTCDateT
 
     @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "payment_detail_id")
-    private WorkingCapitalLoanTransactionPaymentDetail paymentDetail;
+    private PaymentDetail paymentDetail;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "classification_cv_id")
@@ -100,11 +101,11 @@ public class WorkingCapitalLoanTransaction extends AbstractAuditableWithUTCDateT
     }
 
     public static WorkingCapitalLoanTransaction disbursement(final WorkingCapitalLoan loan, final BigDecimal amount,
-            final WorkingCapitalLoanTransactionPaymentDetail paymentDetail, final LocalDate disbursementDate, final ExternalId externalId) {
+            final PaymentDetail paymentDetail, final LocalDate disbursementDate, final ExternalId externalId) {
         final WorkingCapitalLoanTransaction txn = new WorkingCapitalLoanTransaction();
         txn.wcLoan = loan;
         txn.transactionType = LoanTransactionType.DISBURSEMENT;
-        txn.dateOf = disbursementDate;
+        txn.transactionDate = disbursementDate;
         txn.submittedOnDate = disbursementDate;
         txn.transactionAmount = amount;
         txn.paymentDetail = paymentDetail;

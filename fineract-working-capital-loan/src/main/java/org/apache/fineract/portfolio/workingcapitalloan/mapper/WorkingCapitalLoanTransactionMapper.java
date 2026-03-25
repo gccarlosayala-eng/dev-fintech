@@ -22,10 +22,10 @@ import org.apache.fineract.infrastructure.core.config.MapstructMapperConfig;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionEnumData;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionType;
 import org.apache.fineract.portfolio.loanproduct.service.LoanEnumerations;
+import org.apache.fineract.portfolio.paymentdetail.data.PaymentDetailData;
+import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetail;
 import org.apache.fineract.portfolio.workingcapitalloan.data.WorkingCapitalLoanTransactionData;
-import org.apache.fineract.portfolio.workingcapitalloan.data.WorkingCapitalLoanTransactionPaymentDetailData;
 import org.apache.fineract.portfolio.workingcapitalloan.domain.WorkingCapitalLoanTransaction;
-import org.apache.fineract.portfolio.workingcapitalloan.domain.WorkingCapitalLoanTransactionPaymentDetail;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
@@ -35,7 +35,7 @@ public interface WorkingCapitalLoanTransactionMapper {
 
     @Mapping(target = "type", source = "transactionType", qualifiedByName = "loanTransactionTypeToEnumData")
     @Mapping(target = "paymentDetailData", source = "paymentDetail", qualifiedByName = "paymentDetailToData")
-    @Mapping(target = "transactionDate", source = "dateOf")
+    @Mapping(target = "transactionDate", source = "transactionDate")
     @Mapping(target = "principalPortion", source = "allocation.principalPortion")
     @Mapping(target = "feeChargesPortion", source = "allocation.feeChargesPortion")
     @Mapping(target = "penaltyChargesPortion", source = "allocation.penaltyChargesPortion")
@@ -47,14 +47,12 @@ public interface WorkingCapitalLoanTransactionMapper {
     }
 
     @Named("paymentDetailToData")
-    default WorkingCapitalLoanTransactionPaymentDetailData paymentDetailToData(
-            final WorkingCapitalLoanTransactionPaymentDetail paymentDetail) {
+    default PaymentDetailData paymentDetailToData(final PaymentDetail paymentDetail) {
         if (paymentDetail == null) {
             return null;
         }
-        return WorkingCapitalLoanTransactionPaymentDetailData.builder().id(paymentDetail.getId())
-                .accountNumber(paymentDetail.getAccountNumber()).checkNumber(paymentDetail.getCheckNumber())
-                .routingCode(paymentDetail.getRoutingCode()).receiptNumber(paymentDetail.getReceiptNumber())
-                .bankNumber(paymentDetail.getBankNumber()).build();
+        return PaymentDetailData.builder().id(paymentDetail.getId()).accountNumber(paymentDetail.getAccountNumber())
+                .checkNumber(paymentDetail.getCheckNumber()).routingCode(paymentDetail.getRoutingCode())
+                .receiptNumber(paymentDetail.getReceiptNumber()).bankNumber(paymentDetail.getBankNumber()).build();
     }
 }

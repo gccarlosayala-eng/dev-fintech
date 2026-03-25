@@ -28,6 +28,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.apache.fineract.infrastructure.core.domain.ExternalId;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionEnumData;
+import org.apache.fineract.portfolio.paymentdetail.data.PaymentDetailData;
 
 @Getter
 @Setter
@@ -46,7 +47,7 @@ public class WorkingCapitalLoanTransactionData implements Serializable {
     private ExternalId reversalExternalId;
     private LocalDate reversedOnDate;
 
-    private WorkingCapitalLoanTransactionPaymentDetailData paymentDetailData;
+    private PaymentDetailData paymentDetailData;
     // Portions from allocation (principal, fee, penalty).
     private BigDecimal principalPortion;
     private BigDecimal feeChargesPortion;

@@ -67,24 +67,6 @@
         </createTable>
     </changeSet>
 
-    <changeSet author="fineract" id="wcl-0008-1b">
-        <preConditions onFail="MARK_RAN">
-            <not>
-                <tableExists tableName="m_wc_loan_transaction_payment_detail"/>
-            </not>
-        </preConditions>
-        <createTable tableName="m_wc_loan_transaction_payment_detail">
-            <column autoIncrement="true" name="id" type="BIGINT">
-                <constraints nullable="false" primaryKey="true" primaryKeyName="pk_m_wc_loan_txn_payment_detail"/>
-            </column>
-            <column name="account_number" type="VARCHAR(50)"/>
-            <column name="check_number" type="VARCHAR(50)"/>
-            <column name="routing_code" type="VARCHAR(50)"/>
-            <column name="receipt_number" type="VARCHAR(50)"/>
-            <column name="bank_number" type="VARCHAR(50)"/>
-        </createTable>
-    </changeSet>
-
     <changeSet author="fineract" id="wcl-0008-2-mysql" context="mysql">
         <preConditions onFail="MARK_RAN">
             <tableExists tableName="m_wc_loan_transaction"/>
@@ -127,7 +109,7 @@
             </not>
         </preConditions>
         <addForeignKeyConstraint baseTableName="m_wc_loan_transaction" baseColumnNames="payment_detail_id"
-                                 constraintName="FK_m_wc_loan_transaction_payment_detail" referencedTableName="m_wc_loan_transaction_payment_detail" referencedColumnNames="id"/>
+                                 constraintName="FK_m_wc_loan_transaction_payment_detail" referencedTableName="m_payment_detail" referencedColumnNames="id"/>
     </changeSet>
 
     <changeSet author="fineract" id="wcl-0008-4">
@@ -206,9 +188,9 @@
                 <constraints nullable="false" unique="true" uniqueConstraintName="uq_m_wc_loan_transaction_allocation_transaction_id"
                              foreignKeyName="FK_m_wc_loan_transaction_allocation_transaction" referencedTableName="m_wc_loan_transaction" referencedColumnNames="id"/>
             </column>
-            <column name="principal_portion_derived" type="DECIMAL(19, 6)"/>
-            <column name="fee_charges_portion_derived" type="DECIMAL(19, 6)"/>
-            <column name="penalty_charges_portion_derived" type="DECIMAL(19, 6)"/>
+            <column name="principal_portion" type="DECIMAL(19, 6)"/>
+            <column name="fee_charges_portion" type="DECIMAL(19, 6)"/>
+            <column name="penalty_charges_portion" type="DECIMAL(19, 6)"/>
             <column name="version" type="SMALLINT" defaultValueNumeric="0">
                 <constraints nullable="false"/>
             </column>

@@ -53,7 +53,7 @@ class WorkingCapitalLoanTransactionMapperTest {
         final BigDecimal amount = BigDecimal.valueOf(10000);
         when(transaction.getId()).thenReturn(1L);
         when(transaction.getTransactionType()).thenReturn(LoanTransactionType.DISBURSEMENT);
-        when(transaction.getDateOf()).thenReturn(txnDate);
+        when(transaction.getTransactionDate()).thenReturn(txnDate);
         when(transaction.getSubmittedOnDate()).thenReturn(txnDate);
         when(transaction.getTransactionAmount()).thenReturn(amount);
         when(transaction.getExternalId()).thenReturn(new ExternalId("ext-1"));
@@ -85,7 +85,7 @@ class WorkingCapitalLoanTransactionMapperTest {
     void toData_whenAllocationNull_setsPortionsToNull() {
         when(transaction.getId()).thenReturn(2L);
         when(transaction.getTransactionType()).thenReturn(LoanTransactionType.DISBURSEMENT);
-        when(transaction.getDateOf()).thenReturn(LocalDate.of(2024, 2, 1));
+        when(transaction.getTransactionDate()).thenReturn(LocalDate.of(2024, 2, 1));
         when(transaction.getSubmittedOnDate()).thenReturn(LocalDate.of(2024, 2, 1));
         when(transaction.getTransactionAmount()).thenReturn(BigDecimal.valueOf(5000));
         when(transaction.getExternalId()).thenReturn(null);

@@ -69,7 +69,8 @@ public class WorkingCapitalLoanTransactionReadPlatformServiceImpl implements Wor
     @Override
     public Page<WorkingCapitalLoanTransactionData> retrieveTransactions(final Long loanId, final Pageable pageable) {
         ensureLoanExists(loanId);
-        final Page<WorkingCapitalLoanTransaction> page = this.transactionRepository.findByWcLoan_IdOrderByDateOfAscIdAsc(loanId, pageable);
+        final Page<WorkingCapitalLoanTransaction> page = this.transactionRepository.findByWcLoan_IdOrderByTransactionDateAscIdAsc(loanId,
+                pageable);
         final List<WorkingCapitalLoanTransactionData> content = page.getContent().stream().map(this.transactionMapper::toData).toList();
         return new PageImpl<>(content, page.getPageable(), page.getTotalElements());
     }
