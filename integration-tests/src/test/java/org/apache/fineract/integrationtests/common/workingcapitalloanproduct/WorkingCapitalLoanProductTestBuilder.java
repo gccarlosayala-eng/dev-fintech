@@ -237,10 +237,7 @@ public class WorkingCapitalLoanProductTestBuilder {
                     PostWorkingCapitalLoanProductsRequest.RepaymentFrequencyTypeEnum.valueOf(this.repaymentFrequencyType));
         }
         request.setDelinquencyGraceDays(this.delinquencyGraceDays);
-        if (this.delinquencyStartType != null) {
-            request.setDelinquencyStartType(
-                    PostWorkingCapitalLoanProductsRequest.DelinquencyStartTypeEnum.valueOf(this.delinquencyStartType));
-        }
+        request.setDelinquencyStartType(this.delinquencyStartType);
         request.setLocale("en_US");
         request.setDateFormat("yyyy-MM-dd");
     }
@@ -271,10 +268,7 @@ public class WorkingCapitalLoanProductTestBuilder {
                     PutWorkingCapitalLoanProductsProductIdRequest.RepaymentFrequencyTypeEnum.valueOf(this.repaymentFrequencyType));
         }
         request.setDelinquencyGraceDays(this.delinquencyGraceDays);
-        if (this.delinquencyStartType != null) {
-            request.setDelinquencyStartType(
-                    PutWorkingCapitalLoanProductsProductIdRequest.DelinquencyStartTypeEnum.valueOf(this.delinquencyStartType));
-        }
+        request.setDelinquencyStartType(this.delinquencyStartType);
         request.setLocale("en_US");
         request.setDateFormat("yyyy-MM-dd");
     }

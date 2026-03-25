@@ -341,6 +341,25 @@ public class WorkingCapitalLoanAssemblerImpl implements WorkingCapitalLoanAssemb
                     changes.put(WorkingCapitalLoanProductConstants.delinquencyBucketIdParamName, bucketId);
                 }
             }
+            if (fromApiJsonHelper.parameterExists(WorkingCapitalLoanProductConstants.delinquencyGraceDaysParamName, element)) {
+                final Integer delinquencyGraceDays = fromApiJsonHelper
+                        .extractIntegerWithLocaleNamed(WorkingCapitalLoanProductConstants.delinquencyGraceDaysParamName, element);
+                if (command.isChangeInIntegerParameterNamed(WorkingCapitalLoanProductConstants.delinquencyGraceDaysParamName,
+                        detail.getDelinquencyGraceDays())) {
+                    detail.setDelinquencyGraceDays(delinquencyGraceDays);
+                    changes.put(WorkingCapitalLoanProductConstants.delinquencyGraceDaysParamName, delinquencyGraceDays);
+                }
+            }
+            if (fromApiJsonHelper.parameterExists(WorkingCapitalLoanProductConstants.delinquencyStartTypeParamName, element)) {
+                final String existingValue = detail.getDelinquencyStartType() != null ? detail.getDelinquencyStartType().name() : null;
+                if (command.isChangeInStringParameterNamed(WorkingCapitalLoanProductConstants.delinquencyStartTypeParamName,
+                        existingValue)) {
+                    final WorkingCapitalLoanDelinquencyStartType type = WorkingCapitalLoanDelinquencyStartType.valueOf(fromApiJsonHelper
+                            .extractStringNamed(WorkingCapitalLoanProductConstants.delinquencyStartTypeParamName, element));
+                    detail.setDelinquencyStartType(type);
+                    changes.put(WorkingCapitalLoanProductConstants.delinquencyStartTypeParamName, type.name());
+                }
+            }
         }
 
         if (command.arrayOfParameterNamed(WorkingCapitalLoanProductConstants.paymentAllocationParamName) != null) {

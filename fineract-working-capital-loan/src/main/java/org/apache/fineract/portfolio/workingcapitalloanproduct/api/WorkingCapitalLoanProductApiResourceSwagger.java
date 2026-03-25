@@ -95,7 +95,7 @@ public final class WorkingCapitalLoanProductApiResourceSwagger {
         public String repaymentFrequencyType;
         @Schema(example = "1")
         public Integer delinquencyGraceDays;
-        @Schema(example = "DAYS", allowableValues = { "LOAN_CREATION", "DISBURSEMENT" })
+        @Schema(example = "LOAN_CREATION", description = "Delinquency start type: LOAN_CREATION or DISBURSEMENT")
         public String delinquencyStartType;
 
         // Configurable attributes
@@ -289,7 +289,7 @@ public final class WorkingCapitalLoanProductApiResourceSwagger {
         public List<StringEnumOptionData> amortizationTypeOptions;
         public List<StringEnumOptionData> periodFrequencyTypeOptions;
         public List<StringEnumOptionData> advancedPaymentAllocationTypes;
-        public List<StringEnumOptionData> delinquencyStartTypes;
+        public List<StringEnumOptionData> delinquencyStartTypeOptions;
         public List<EnumOptionData> advancedPaymentAllocationTransactionTypes;
         public List<GetWorkingCapitalLoanProductsResponse.GetDelinquencyBucket> delinquencyBucketOptions;
     }
@@ -417,7 +417,7 @@ public final class WorkingCapitalLoanProductApiResourceSwagger {
         public String repaymentFrequencyType;
         @Schema(example = "1")
         public Integer delinquencyGraceDays;
-        @Schema(example = "DAYS", allowableValues = { "LOAN_CREATION", "DISBURSEMENT" })
+        @Schema(example = "LOAN_CREATION", description = "Delinquency start type: LOAN_CREATION or DISBURSEMENT")
         public String delinquencyStartType;
 
         // Configurable attributes
