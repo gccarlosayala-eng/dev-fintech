@@ -209,7 +209,7 @@ public class LoanAccrualsProcessingServiceImpl implements LoanAccrualsProcessing
         if (!accrualTransactions.isEmpty()) {
             if (loan.isPeriodicAccrualAccountingEnabledOnLoanProduct()) {
                 reprocessPeriodicAccruals(loan, accrualTransactions, addEvent);
-            } else if (loan.isUpfrontAccrualAccountingEnabledOnLoanProduct()) {
+            } else if (loan.isNoneOrCashOrUpfrontAccrualAccountingEnabledOnLoanProduct()) {
                 reprocessNonPeriodicAccruals(loan, accrualTransactions, addEvent);
             }
         }
