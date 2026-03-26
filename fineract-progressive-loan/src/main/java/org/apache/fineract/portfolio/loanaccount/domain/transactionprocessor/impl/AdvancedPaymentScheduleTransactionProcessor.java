@@ -3585,6 +3585,9 @@ public class AdvancedPaymentScheduleTransactionProcessor extends AbstractLoanRep
     private void createMissingAccrualTransactionDuringChargeOffIfNeeded(final BigDecimal newInterest,
             final LoanTransaction chargeOffTransaction, final LocalDate chargeOffDate, final TransactionCtx ctx) {
         final Loan loan = chargeOffTransaction.getLoan();
+        if (!loan.isUpfrontAccrualAccountingEnabledOnLoanProduct() && !loan.isPeriodicAccrualAccountingEnabledOnLoanProduct()) {
+            return;
+        }
         final List<LoanRepaymentScheduleInstallment> relevantInstallments = loan.getRepaymentScheduleInstallments().stream()
                 .filter(i -> !i.getFromDate().isAfter(chargeOffDate)).toList();
 

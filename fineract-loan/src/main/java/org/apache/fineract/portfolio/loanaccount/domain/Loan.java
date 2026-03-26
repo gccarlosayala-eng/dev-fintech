@@ -1154,11 +1154,6 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom<Long> {
         return this.loanProduct.isAccountingDisabled();
     }
 
-    public Boolean isNoneOrCashOrUpfrontAccrualAccountingEnabledOnLoanProduct() {
-        return isCashBasedAccountingEnabledOnLoanProduct() || isUpfrontAccrualAccountingEnabledOnLoanProduct()
-                || isAccountingDisabledOnLoanProduct();
-    }
-
     public Boolean isPeriodicAccrualAccountingEnabledOnLoanProduct() {
         return this.loanProduct.isPeriodicAccrualAccountingEnabled();
     }
