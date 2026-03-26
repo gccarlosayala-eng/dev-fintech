@@ -635,6 +635,13 @@ public class GlobalConfigurationHelper {
         allowCashAndNonCashAccrual.put("trapDoor", false);
         defaults.add(allowCashAndNonCashAccrual);
 
+        HashMap<String, Object> enableInstantDelinquencyCalculation = new HashMap<>();
+        enableInstantDelinquencyCalculation.put("name", GlobalConfigurationConstants.ENABLE_INSTANT_DELINQUENCY_CALCULATION);
+        enableInstantDelinquencyCalculation.put("value", 0L);
+        enableInstantDelinquencyCalculation.put("enabled", true);
+        enableInstantDelinquencyCalculation.put("trapDoor", false);
+        defaults.add(enableInstantDelinquencyCalculation);
+
         return defaults;
     }
 

@@ -182,3 +182,104 @@ Feature: Working Capital Delinquency
 #TODO check amounts in case of repayment
   @Skip @TestRailId:tempX
   Scenario: Verify working capital loan delinquency range schedule - UCXX: delinquency range schedule with repayments
+
+
+
+  @TestRailId:CXXXXX1
+  Scenario: Working Capital Loan COB + Delinquency UC1
+    When Admin sets the business date to "01 January 2026"
+    And Admin creates a client with random data
+    And Admin creates a working capital loan with the following data:
+      | LoanProduct | submittedOnDate | expectedDisbursementDate | principalAmount | totalPayment | periodPaymentRate | discount |
+      | WCLP        | 01 January 2026 | 01 January 2026          | 100             | 100          | 1                 | 0        |
+    Then Working capital loan creation was successful
+    And Working capital loan account has the correct data:
+      | product.name | submittedOnDate | expectedDisbursementDate | status                         | principal | approvedPrincipal | totalPayment | periodPaymentRate | discount |
+      | WCLP         | 2026-01-01      | 2026-01-01               | Submitted and pending approval | 100.0     | 0.0               | 100.0        | 1.0               | 0.0      |
+    Then Admin successfully approves the working capital loan on "01 January 2026" with "100" amount and expected disbursement date on "01 January 2026"
+    Then Admin successfully disburse the Working Capital loan on "01 January 2026" with "100" EUR transaction amount
+    Then Working Capital loan status will be "ACTIVE"
+    Then Verify Working Capital loan disbursement was successful on "01 January 2026" with "100" EUR transaction amount
+    And Working capital loan account has the correct data:
+      | product.name | submittedOnDate | expectedDisbursementDate | status | principal | approvedPrincipal | totalPayment | periodPaymentRate | discount |
+      | WCLP         | 2026-01-01      | 2026-01-01               | Active | 100.0     | 100.0             | 100.0        | 1.0               | 0.0      |
+    When Admin sets the business date to "02 January 2026"
+    And Admin runs inline COB job for Working Capital Loan
+ ## Should be ok
+    Then Delinquency Tag History for WC Loan has lines:
+      | rangeId | getAddedOnDate | liftedOnDate | classification | minimumAgeDays | maximumAgeDays |
+
+    When Admin sets the business date to "30 January 2026"
+    And Admin runs inline COB job for Working Capital Loan
+ ## Should be ok
+    Then Delinquency Tag History for WC Loan has lines:
+      | rangeId | getAddedOnDate | liftedOnDate | classification | minimumAgeDays | maximumAgeDays |
+
+    When Admin sets the business date to "31 January 2026"
+    And Admin runs inline COB job for Working Capital Loan
+         ## Should be delinquent for 1 days and Delinquency range 1
+    Then Delinquency Tag History for WC Loan has lines:
+      | rangeId | getAddedOnDate | liftedOnDate | classification | minimumAgeDays | maximumAgeDays |
+      | 1       | 2026-01-31     |              | D00            | 1              | 30             |
+
+    When Admin sets the business date to "01 April 2026"
+    And Admin runs inline COB job for Working Capital Loan
+    Then Delinquency Tag History for WC Loan has lines:
+      | rangeId | getAddedOnDate | liftedOnDate | classification | minimumAgeDays | maximumAgeDays |
+      | 1       | 2026-04-01     |              | D60            | 61             | 90             |
+      | 2       | 2026-04-01     |              | D30            | 31             | 60             |
+      | 3       | 2026-04-01     |              | D00            | 1              | 30             |
+      | 1       | 2026-03-02     |              | D30            | 31             | 60             |
+      | 2       | 2026-03-02     |              | D00            | 1              | 30             |
+      | 1       | 2026-01-31     |              | D00            | 1              | 30             |
+
+  @TestRailId:CXXXXX2
+  Scenario: Working Capital Loan COB + Delinquency UC2
+    When Admin sets the business date to "01 December 2020"
+    And Admin creates a client with random data
+    And Admin creates a working capital loan with the following data:
+      | LoanProduct | submittedOnDate | expectedDisbursementDate | principalAmount | totalPayment | periodPaymentRate | discount |
+      | WCLP        | 01 December 2020 | 01 December 2020          | 1800             | 1800          | 1                 | 0        |
+    Then Working capital loan creation was successful
+    And Working capital loan account has the correct data:
+      | product.name | submittedOnDate | expectedDisbursementDate | status                         | principal | approvedPrincipal | totalPayment | periodPaymentRate | discount |
+      | WCLP         | 2020-12-01      | 2020-12-01               | Submitted and pending approval | 1800.0     | 0.0               | 1800.0        | 1.0               | 0.0      |
+    Then Admin successfully approves the working capital loan on "01 December 2020" with "1800" amount and expected disbursement date on "01 December 2020"
+    Then Admin successfully disburse the Working Capital loan on "01 December 2020" with "1800" EUR transaction amount
+    Then Working Capital loan status will be "ACTIVE"
+    Then Verify Working Capital loan disbursement was successful on "01 December 2020" with "1800" EUR transaction amount
+    And Working capital loan account has the correct data:
+      | product.name | submittedOnDate | expectedDisbursementDate | status | principal | approvedPrincipal | totalPayment | periodPaymentRate | discount |
+      | WCLP         |2020-12-01      | 2020-12-01           | Active | 1800.0     | 1800.0             | 1800.0        | 1.0               | 0.0      |
+    When Admin sets the business date to "02 December 2020"
+    And Admin runs inline COB job for Working Capital Loan
+ ## Should be ok
+    When Admin sets the business date to "05 December 2020"
+    And Admin runs inline COB job for Working Capital Loan
+    When make Internal Payment "30.0" on "2020-12-05"
+
+    Then Delinquency Tag History for WC Loan has lines:
+      | rangeId | getAddedOnDate | liftedOnDate | classification | minimumAgeDays | maximumAgeDays |
+
+    When Admin sets the business date to "01 January 2021"
+    And Admin runs inline COB job for Working Capital Loan
+ ## Should be ok
+    Then Delinquency Tag History for WC Loan has lines:
+      | rangeId | getAddedOnDate | liftedOnDate | classification | minimumAgeDays | maximumAgeDays |
+      | 1       | 2020-12-31     |              | D00            | 1              | 30             |
+
+    When Admin sets the business date to "06 January 2021"
+    And Admin runs inline COB job for Working Capital Loan
+    Then Delinquency Tag History for WC Loan has lines:
+      | rangeId | getAddedOnDate | liftedOnDate | classification | minimumAgeDays | maximumAgeDays |
+      | 1       | 2020-12-31     |              | D00            | 1              | 30             |
+    When make Internal Payment "54.0" on "2021-01-06"
+    Then Delinquency Tag History for WC Loan has lines:
+      | rangeId | getAddedOnDate | liftedOnDate | classification | minimumAgeDays | maximumAgeDays |
+      | 1       | 2020-12-31     | 2021-01-06   | D00            | 1              | 30             |
+
+    When Admin sets the business date to "07 January 2021"
+    And Admin runs inline COB job for Working Capital Loan
+    Then Delinquency Tag History for WC Loan has lines:
+      | rangeId | getAddedOnDate | liftedOnDate | classification | minimumAgeDays | maximumAgeDays |
+      | 1       | 2020-12-31     | 2021-01-06   | D00            | 1              | 30             |

@@ -133,15 +133,37 @@ public class WorkingCapitalLoanDelinquencyRangeScheduleServiceImpl implements Wo
 
     @Override
     public void applyRepayment(Long loanId, LocalDate transactionDate, BigDecimal amount) {
-        Optional<WorkingCapitalLoanDelinquencyRangeSchedule> periodOpt = loanDelinquencyRangeScheduleRepository
+        List<WorkingCapitalLoanDelinquencyRangeSchedule> pastOpenPeriods = loanDelinquencyRangeScheduleRepository
+                .findByLoanIdAndToDateIsBeforeAndMinPaymentCriteriaMet(loanId, transactionDate, false);
+        Optional<WorkingCapitalLoanDelinquencyRangeSchedule> currentPeriod = loanDelinquencyRangeScheduleRepository
                 .findByLoanIdAndFromDateLessThanEqualAndToDateGreaterThanEqual(loanId, transactionDate, transactionDate);
-        if (periodOpt.isPresent()) {
-            WorkingCapitalLoanDelinquencyRangeSchedule period = periodOpt.get();
-            BigDecimal newPaidAmount = period.getPaidAmount().add(amount);
+        BigDecimal transactionAmount = amount;
+        for (WorkingCapitalLoanDelinquencyRangeSchedule period : pastOpenPeriods) {
+            BigDecimal payAmount = MathUtil.min(amount, period.getOutstandingAmount(), true);
+            transactionAmount = transactionAmount.subtract(payAmount);
+            period.setPaidAmount(period.getPaidAmount().add(payAmount));
+            period.setOutstandingAmount(period.getOutstandingAmount().subtract(payAmount));
+            if (period.getOutstandingAmount().compareTo(BigDecimal.ZERO) <= 0) {
+                period.setMinPaymentCriteriaMet(true);
+                period.setDelinquentAmount(BigDecimal.ZERO);
+                period.setDelinquentDays(0L);
+            }
+            loanDelinquencyRangeScheduleRepository.saveAndFlush(period);
+            log.debug("Applied repayment of {} to delinquency range schedule period {} for WC loan {}", payAmount, period.getPeriodNumber(),
+                    loanId);
+            if (transactionAmount.compareTo(BigDecimal.ZERO) <= 0) {
+                break;
+            }
+        }
+        if (currentPeriod.isPresent()) {
+            WorkingCapitalLoanDelinquencyRangeSchedule period = currentPeriod.get();
+            BigDecimal newPaidAmount = period.getPaidAmount().add(transactionAmount);
             period.setPaidAmount(newPaidAmount);
             period.setOutstandingAmount(period.getExpectedAmount().subtract(newPaidAmount).max(BigDecimal.ZERO));
             if (newPaidAmount.compareTo(period.getExpectedAmount()) >= 0) {
                 period.setMinPaymentCriteriaMet(true);
+                period.setDelinquentAmount(BigDecimal.ZERO);
+                period.setDelinquentDays(0L);
             }
             loanDelinquencyRangeScheduleRepository.saveAndFlush(period);
             log.debug("Applied repayment of {} to delinquency range schedule period {} for WC loan {}", amount, period.getPeriodNumber(),
