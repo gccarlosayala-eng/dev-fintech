@@ -48,7 +48,7 @@ import java.util.Locale;
 import java.util.TimeZone;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.accounting.common.AccountingConstants.FinancialActivity;
-import org.apache.fineract.client.models.GetFixedDepositAccountsTransactions;
+import org.apache.fineract.client.models.GetFixedDepositAccountsAccountIdTransactionsResponse;
 import org.apache.fineract.client.models.PutGlobalConfigurationsRequest;
 import org.apache.fineract.infrastructure.businessdate.domain.BusinessDateType;
 import org.apache.fineract.infrastructure.configuration.api.GlobalConfigurationConstants;
@@ -3028,12 +3028,12 @@ public class FixedDepositTest extends IntegrationTest {
         this.journalEntryHelper.checkJournalEntryForLiabilityAccount(liabilityAccount, INTEREST_POSTED_DATE,
                 new JournalEntry[] { new JournalEntry(totalInterestPostedBeforeUndo, JournalEntry.TransactionType.CREDIT) });
 
-        List<GetFixedDepositAccountsTransactions> transactions = this.fixedDepositAccountHelper
+        List<GetFixedDepositAccountsAccountIdTransactionsResponse> transactions = this.fixedDepositAccountHelper
                 .getFixedDepositTransactions(fixedDepositAccountId);
         Assertions.assertNotNull(transactions);
 
         Integer interestTransactionId = null;
-        for (GetFixedDepositAccountsTransactions txn : transactions) {
+        for (GetFixedDepositAccountsAccountIdTransactionsResponse txn : transactions) {
             if (txn.getTransactionType() != null && Boolean.TRUE.equals(txn.getTransactionType().getInterestPosting())) {
                 interestTransactionId = txn.getId() == null ? null : txn.getId().intValue();
                 break;
@@ -3041,14 +3041,14 @@ public class FixedDepositTest extends IntegrationTest {
         }
         Assertions.assertNotNull(interestTransactionId);
 
-        Integer undoResult = this.fixedDepositAccountHelper.undoFixedDepositTransaction(fixedDepositAccountId, interestTransactionId);
+        Long undoResult = this.fixedDepositAccountHelper.undoFixedDepositTransaction(fixedDepositAccountId, interestTransactionId);
         Assertions.assertNotNull(undoResult);
 
         // 1. Verify transaction is marked reversed
-        List<GetFixedDepositAccountsTransactions> transactionsAfterUndo = this.fixedDepositAccountHelper
+        List<GetFixedDepositAccountsAccountIdTransactionsResponse> transactionsAfterUndo = this.fixedDepositAccountHelper
                 .getFixedDepositTransactions(fixedDepositAccountId);
         boolean foundReversed = false;
-        for (GetFixedDepositAccountsTransactions txn : transactionsAfterUndo) {
+        for (GetFixedDepositAccountsAccountIdTransactionsResponse txn : transactionsAfterUndo) {
             if (txn.getId() != null && txn.getId().intValue() == interestTransactionId) {
                 Assertions.assertTrue(Boolean.TRUE.equals(txn.getReversed()),
                         "Interest posting transaction must be marked reversed after undo");

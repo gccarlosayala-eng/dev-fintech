@@ -25,7 +25,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
-import org.apache.fineract.client.models.GetFixedDepositAccountsTransactions;
+import org.apache.fineract.client.models.GetFixedDepositAccountsAccountIdTransactionsResponse;
 import org.apache.fineract.client.util.Calls;
 import org.apache.fineract.integrationtests.common.CommonConstants;
 import org.apache.fineract.integrationtests.common.FineractClientHelper;
@@ -640,22 +640,19 @@ public class FixedDepositAccountHelper {
         return this;
     }
 
-    // TODO: Rewrite to use fineract-client instead!
-    @Deprecated(forRemoval = true)
-    public List<GetFixedDepositAccountsTransactions> getFixedDepositTransactions(final Integer fixedDepositAccountId) {
+    public List<GetFixedDepositAccountsAccountIdTransactionsResponse> getFixedDepositTransactions(final Integer fixedDepositAccountId) {
         LOG.info("-------------------- RETRIEVING FIXED DEPOSIT TRANSACTIONS ---------------------");
-        return Calls.ok(FineractClientHelper.getFineractClient().fixedDepositAccounts.retrieveOne20(fixedDepositAccountId.longValue(),
-                false, "all", "transactions")).getTransactions();
+        return Calls.ok(FineractClientHelper.getFineractClient().fixedDepositAccountTransactions
+                .retrieveAllFixedDepositAccountTransactions(fixedDepositAccountId.longValue()));
     }
 
-    // Rewritten to use fineract-client (FixedDepositAccountTransactionsApi.adjustTransaction)
-    // which maps to POST /v1/fixeddepositaccounts/{accountId}/transactions/{transactionId}?command=undo
-    @Deprecated(forRemoval = true)
-    public Integer undoFixedDepositTransaction(final Integer fixedDepositAccountId, final Integer transactionId) {
+    public Long undoFixedDepositTransaction(final Integer fixedDepositAccountId, final Integer transactionId) {
         LOG.info("--------------------------------- UNDO FIXED DEPOSIT TRANSACTION --------------------------------");
-        String response = Calls.ok(FineractClientHelper.getFineractClient().fixedDepositAccountTransactions
-                .adjustTransaction(fixedDepositAccountId.longValue(), transactionId.longValue(), "undo", "{}"));
-        return new com.google.gson.JsonParser().parse(response).getAsJsonObject().get("resourceId").getAsInt();
+        return Calls
+                .ok(FineractClientHelper.getFineractClient().fixedDepositAccountTransactions.adjustTransaction(
+                        fixedDepositAccountId.longValue(), transactionId.longValue(),
+                        new org.apache.fineract.client.models.PostFixedDepositAccountsFixedDepositAccountIdTransactionsRequest(), "undo"))
+                .getResourceId();
     }
 
 }

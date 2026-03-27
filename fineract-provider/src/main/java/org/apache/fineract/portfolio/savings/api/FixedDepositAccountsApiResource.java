@@ -219,7 +219,6 @@ public class FixedDepositAccountsApiResource {
     public String retrieveOne(@PathParam("accountId") @Parameter(description = "accountId") final Long accountId,
             @DefaultValue("false") @QueryParam("staffInSelectedOfficeOnly") @Parameter(description = "staffInSelectedOfficeOnly") final boolean staffInSelectedOfficeOnly,
             @DefaultValue("all") @QueryParam("chargeStatus") @Parameter(description = "chargeStatus") final String chargeStatus,
-            @DefaultValue("all") @QueryParam("associations") @Parameter(description = "associations") final String associations,
             @Context final UriInfo uriInfo) {
 
         this.context.authenticatedUser().validateHasReadPermission(DepositsApiConstants.FIXED_DEPOSIT_ACCOUNT_RESOURCE_NAME);

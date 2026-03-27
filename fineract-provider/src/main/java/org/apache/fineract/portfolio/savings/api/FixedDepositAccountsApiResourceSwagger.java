@@ -21,7 +21,6 @@ package org.apache.fineract.portfolio.savings.api;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -478,50 +477,6 @@ final class FixedDepositAccountsApiResourceSwagger {
         public GetFixedDepositAccountsResponse.GetFixedDepositAccountsDepositPeriodFrequency depositPeriodFrequency;
         public GetFixedDepositAccountsAccountIdSummary summary;
         public GetFixedDepositAccountsAccountChart accountChart;
-        public List<GetFixedDepositAccountsTransactions> transactions;
-
-        @Schema(description = "GetFixedDepositAccountsTransactions")
-        static final class GetFixedDepositAccountsTransactions {
-
-            private GetFixedDepositAccountsTransactions() {}
-
-            static final class GetFixedDepositAccountsTransactionType {
-
-                private GetFixedDepositAccountsTransactionType() {}
-
-                @Schema(example = "1")
-                public Long id;
-                @Schema(example = "savingsAccountTransactionType.interestPosting")
-                public String code;
-                @Schema(example = "Interest Posting")
-                public String description;
-                @Schema(example = "false")
-                public Boolean deposit;
-                @Schema(example = "false")
-                public Boolean withdrawal;
-                @Schema(example = "true")
-                public Boolean interestPosting;
-                @Schema(example = "false")
-                public Boolean feeDeduction;
-            }
-
-            @Schema(example = "1")
-            public Long id;
-            public GetFixedDepositAccountsTransactionType transactionType;
-            @Schema(example = "1")
-            public Long accountId;
-            @Schema(example = "000000001")
-            public Long accountNo;
-            @Schema(example = "[2014, 6, 25]")
-            public LocalDate date;
-            public GetFixedDepositAccountsAccountIdCurrency currency;
-            @Schema(example = "5000")
-            public Float amount;
-            @Schema(example = "0")
-            public Float runningBalance;
-            @Schema(example = "false")
-            public Boolean reversed;
-        }
     }
 
     @Schema(description = "PutFixedDepositAccountsAccountIdRequest")
