@@ -77,7 +77,6 @@ public class FixedDepositAccountTransactionsApiResource {
 
     @GET
     @Path("template")
-    @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     @Operation(summary = "Retrieve Fixed Deposit Account Transaction Template", operationId = "retrieveTemplateFixedDepositAccountTransaction")
     public String retrieveTemplate(@PathParam("fixedDepositAccountId") final Long fixedDepositAccountId,
@@ -99,7 +98,6 @@ public class FixedDepositAccountTransactionsApiResource {
 
     @GET
     @Path("{transactionId}")
-    @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     @Operation(summary = "Retrieve a fixed deposit account transaction", operationId = "retrieveOneFixedDepositAccountTransaction")
     public String retrieveOne(@PathParam("fixedDepositAccountId") final Long fixedDepositAccountId,
