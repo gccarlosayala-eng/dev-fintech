@@ -93,6 +93,16 @@ public class WorkingCapitalRequestFactory {
                 .chargeOffFraudExpenseAccountId(accountTypeResolver.resolve(DefaultAccountType.CREDIT_LOSS_BAD_DEBT_FRAUD));//
     }
 
+    public PostWorkingCapitalLoanProductsRequest defaultWorkingCapitalLoanProductRequestWithDistinctCashAccountingMappings() {
+        return defaultWorkingCapitalLoanProductRequestWithCashAccounting()//
+                .incomeFromPenaltyAccountId(accountTypeResolver.resolve(DefaultAccountType.DEFERRED_INTEREST_REVENUE))//
+                .incomeFromGoodwillCreditFeesAccountId(accountTypeResolver.resolve(DefaultAccountType.RETAINED_EARNINGS_PRIOR_YEAR))//
+                .incomeFromGoodwillCreditPenaltyAccountId(accountTypeResolver.resolve(DefaultAccountType.INCOME_FROM_BUY_DOWN))//
+                .incomeFromChargeOffInterestAccountId(accountTypeResolver.resolve(DefaultAccountType.RECOVERIES))//
+                .incomeFromChargeOffFeesAccountId(accountTypeResolver.resolve(DefaultAccountType.FEE_INCOME))//
+                .incomeFromChargeOffPenaltyAccountId(accountTypeResolver.resolve(DefaultAccountType.DEFERRED_INTEREST_REVENUE));
+    }
+
     public PostWorkingCapitalLoanProductsRequest defaultWorkingCapitalLoanProductRequest() {
         String name = Utils.randomStringGenerator(WCLP_NAME_PREFIX, 10);
         String shortName = loanProductsRequestFactory.generateShortNameSafely();
