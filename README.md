@@ -59,7 +59,7 @@ Follow these steps to quickly set up and run Apache Fineract locally:
 
 ### Prerequisites
 - Java 21 or higher
-- PostgreSQL or MariaDB running locally
+- PostgreSQL running locally
 
 ### Clone the repository
 ```bash
@@ -67,12 +67,14 @@ git clone https://github.com/apache/fineract.git
 cd fineract
 ```
 
-### Create databases
+### Database setup (PostgreSQL)
+
 ```bash
-./gradlew createDB -PdbName=fineract_tenants
-./gradlew createDB -PdbName=fineract_default
+./gradlew createPGDB -PdbName=fineract_tenants
+./gradlew createPGDB -PdbName=fineract_default
 ```
 
+> Note: This task requires PostgreSQL running on localhost:5432 with a user allowed to create databases (default in this project/CI: root / postgres)
 ### Run the application
 ```bash
 ./gradlew devRun
@@ -88,8 +90,8 @@ How to run for local development
 
 Run the following commands in this order:
 ```bash
-./gradlew createDB -PdbName=fineract_tenants
-./gradlew createDB -PdbName=fineract_default
+./gradlew createPGDB -PdbName=fineract_tenants
+./gradlew createPGDB -PdbName=fineract_default
 ./gradlew devRun
 ```
 
