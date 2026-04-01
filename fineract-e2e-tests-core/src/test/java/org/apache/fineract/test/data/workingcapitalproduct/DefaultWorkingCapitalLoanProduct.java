@@ -22,6 +22,8 @@ public enum DefaultWorkingCapitalLoanProduct implements WorkingCapitalLoanProduc
 
     WCLP, //
     WCLP_DISALLOW_ATTRIBUTES_OVERRIDE, //
+    WCLP_DISCOUNT, //
+    WCLP_DISCOUNT_DISALLOW_ATTRIBUTES_OVERRIDE, //
     WCLP_FOR_UPDATE; //
 
     @Override
