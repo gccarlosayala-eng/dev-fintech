@@ -70,7 +70,6 @@ public class WorkingCapitalLoanApiResource {
 
     @GET
     @Path("template")
-    @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     @Operation(operationId = "retrieveWorkingCapitalLoanTemplate", summary = "Retrieve Working Capital Loan application template", description = "Returns loan details plus productOptions, fundOptions, delinquencyBucketOptions, periodFrequencyTypeOptions.")
     @ApiResponses({
@@ -83,7 +82,6 @@ public class WorkingCapitalLoanApiResource {
     }
 
     @GET
-    @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     @Operation(operationId = "retrieveAllWorkingCapitalLoans", summary = "List Working Capital Loans", description = "Uses Spring Data pagination: page, size, sort (e.g. sort=id,asc or sort=accountNumber,desc). "
             + "Filter by clientId, externalId, status, accountNo. Response: content, totalElements, totalPages, size, number.")
@@ -101,7 +99,6 @@ public class WorkingCapitalLoanApiResource {
 
     @GET
     @Path("{loanId}")
-    @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     @Operation(operationId = "retrieveWorkingCapitalLoanById", summary = "Retrieve a Working Capital Loan", description = "Retrieves a Working Capital Loan by id.")
     @ApiResponses({
@@ -113,7 +110,6 @@ public class WorkingCapitalLoanApiResource {
 
     @GET
     @Path("external-id/{loanExternalId}")
-    @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     @Operation(operationId = "retrieveWorkingCapitalLoanByExternalId", summary = "Retrieve a Working Capital Loan by external id", description = "Retrieves a Working Capital Loan by external id.")
     @ApiResponses({
@@ -155,7 +151,6 @@ public class WorkingCapitalLoanApiResource {
 
     @DELETE
     @Path("{loanId}")
-    @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     @Operation(operationId = "deleteWorkingCapitalLoanApplication", summary = "Delete a Working Capital Loan application", description = "Only loans in \"Submitted and awaiting approval\" status can be deleted.")
     @ApiResponses({
@@ -182,7 +177,6 @@ public class WorkingCapitalLoanApiResource {
 
     @DELETE
     @Path("external-id/{loanExternalId}")
-    @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     @Operation(operationId = "deleteWorkingCapitalLoanApplicationByExternalId", summary = "Delete a Working Capital Loan application by external id", description = "Only loans in \"Submitted and awaiting approval\" status can be deleted.")
     @ApiResponses({
