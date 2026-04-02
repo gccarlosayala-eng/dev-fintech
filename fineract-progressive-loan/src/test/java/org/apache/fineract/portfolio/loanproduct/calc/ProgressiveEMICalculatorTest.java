@@ -3206,8 +3206,7 @@ class ProgressiveEMICalculatorTest {
             emiCalculator.addDisbursement(feb29Schedule, LocalDate.of(2023, 9, 1), toMoney(10000.0));
 
             // Schedule with FULL_LEAP_YEAR
-            Mockito.when(loanProductRelatedDetail.getDaysInYearCustomStrategy())
-                    .thenReturn(DaysInYearCustomStrategyType.FULL_LEAP_YEAR);
+            Mockito.when(loanProductRelatedDetail.getDaysInYearCustomStrategy()).thenReturn(DaysInYearCustomStrategyType.FULL_LEAP_YEAR);
 
             final ProgressiveLoanInterestScheduleModel fullLeapSchedule = emiCalculator.generatePeriodInterestScheduleModel(
                     expectedRepaymentPeriods, loanProductRelatedDetail, installmentAmountInMultiplesOf, mc);
