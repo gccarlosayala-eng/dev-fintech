@@ -2392,6 +2392,17 @@ public class CommandWrapperBuilder {
         return this;
     }
 
+    public CommandWrapperBuilder undoFixedDepositAccountTransaction(final Long accountId, final Long transactionId) {
+        this.actionName = "UNDOTRANSACTION";
+        this.entityName = "FIXEDDEPOSITACCOUNT";
+        this.savingsId = accountId;
+        this.entityId = accountId;
+        this.subentityId = transactionId;
+        this.transactionId = transactionId.toString();
+        this.href = "/fixeddepositaccounts/" + accountId + "/transactions/" + transactionId + "?command=undo";
+        return this;
+    }
+
     public CommandWrapperBuilder fixedDepositAccountActivation(final Long accountId) {
         this.actionName = "ACTIVATE";
         this.entityName = "FIXEDDEPOSITACCOUNT";
