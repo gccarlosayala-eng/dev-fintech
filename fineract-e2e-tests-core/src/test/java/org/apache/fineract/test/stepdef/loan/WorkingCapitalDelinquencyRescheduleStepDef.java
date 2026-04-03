@@ -30,9 +30,13 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.client.feign.FineractFeignClient;
+import org.apache.fineract.client.feign.util.CallFailedRuntimeException;
 import org.apache.fineract.client.models.DelinquencyBucketRequest;
 import org.apache.fineract.client.models.MinimumPaymentPeriodAndRule;
 import org.apache.fineract.client.models.PostAllowAttributeOverrides;
@@ -94,17 +98,7 @@ public class WorkingCapitalDelinquencyRescheduleStepDef extends AbstractStepDef 
 
     @When("Admin creates WC delinquency reschedule action with minimumPayment {int} and frequency {int} {word}")
     public void createRescheduleAction(final int minimumPayment, final int frequency, final String frequencyType) {
-        final Long loanId = getLoanId();
-        final PostWorkingCapitalLoansDelinquencyActionRequest request = buildRescheduleRequest(new BigDecimal(minimumPayment), frequency,
-                frequencyType);
-        log.info("Creating RESCHEDULE action for WC loan {}: minimumPayment={}, frequency={} {}", loanId, minimumPayment, frequency,
-                frequencyType);
-
-        final PostWorkingCapitalLoansDelinquencyActionResponse result = ok(
-                () -> fineractFeignClient.workingCapitalLoanDelinquencyActions().createDelinquencyAction(loanId, request));
-        assertThat(result).isNotNull();
-        assertThat(result.getResourceId()).isNotNull();
-        log.info("RESCHEDULE action created with id={}", result.getResourceId());
+        createRescheduleActionInternal(new BigDecimal(minimumPayment), frequency, frequencyType);
     }
 
     @Then("Admin fails to create WC delinquency reschedule action with minimumPayment {int} and frequency {int} {word}")
@@ -118,6 +112,22 @@ public class WorkingCapitalDelinquencyRescheduleStepDef extends AbstractStepDef 
         fail(() -> fineractFeignClient.workingCapitalLoanDelinquencyActions().createDelinquencyAction(loanId, request));
     }
 
+    @Then("Admin fails to create WC delinquency reschedule action with minimumPayment {int} and frequency {int} {word} with error containing {string}")
+    public void failToCreateRescheduleActionWithMessage(final int minimumPayment, final int frequency, final String frequencyType,
+            final String expectedMessage) {
+        final Long loanId = getLoanId();
+        final PostWorkingCapitalLoansDelinquencyActionRequest request = buildRescheduleRequest(new BigDecimal(minimumPayment), frequency,
+                frequencyType);
+        log.info(
+                "Attempting to create RESCHEDULE action for WC loan {} (expecting HTTP 400 and message '{}'): minimumPayment={}, frequency={} {}",
+                loanId, expectedMessage, minimumPayment, frequency, frequencyType);
+
+        final CallFailedRuntimeException exception = fail(
+                () -> fineractFeignClient.workingCapitalLoanDelinquencyActions().createDelinquencyAction(loanId, request));
+        assertThat(exception.getStatus()).as("HTTP status code").isEqualTo(400);
+        assertThat(exception.getDeveloperMessage()).as("Developer message").contains(expectedMessage);
+    }
+
     @Then("WC loan delinquency range schedule has the following periods:")
     public void verifyPeriods(final DataTable table) {
         final Long loanId = getLoanId();
@@ -128,39 +138,115 @@ public class WorkingCapitalDelinquencyRescheduleStepDef extends AbstractStepDef 
         assertThat(periods).as("Number of periods").hasSize(expectedRows.size());
 
         for (int i = 0; i < expectedRows.size(); i++) {
-            final Map<String, String> expected = expectedRows.get(i);
             final WorkingCapitalLoanDelinquencyRangeScheduleData actual = periods.get(i);
-            final String periodLabel = "Period " + (i + 1);
-
-            assertThat(actual.getPeriodNumber()).as(periodLabel + " periodNumber")
-                    .isEqualTo(Integer.parseInt(expected.get("periodNumber")));
-            assertThat(actual.getFromDate()).as(periodLabel + " fromDate")
-                    .isEqualTo(LocalDate.parse(expected.get("fromDate"), DATE_FORMAT));
-            assertThat(actual.getToDate()).as(periodLabel + " toDate").isEqualTo(LocalDate.parse(expected.get("toDate"), DATE_FORMAT));
-            assertThat(actual.getExpectedAmount()).as(periodLabel + " expectedAmount")
-                    .isEqualByComparingTo(new BigDecimal(expected.get("expectedAmount")));
-            assertThat(actual.getPaidAmount()).as(periodLabel + " paidAmount")
-                    .isEqualByComparingTo(new BigDecimal(expected.get("paidAmount")));
-            assertThat(actual.getOutstandingAmount()).as(periodLabel + " outstandingAmount")
-                    .isEqualByComparingTo(new BigDecimal(expected.get("outstandingAmount")));
-
-            final String criteriaMetStr = expected.get("minPaymentCriteriaMet");
-            if (criteriaMetStr == null || criteriaMetStr.isBlank()) {
-                assertThat(actual.getMinPaymentCriteriaMet()).as(periodLabel + " minPaymentCriteriaMet").isNull();
-            } else {
-                assertThat(actual.getMinPaymentCriteriaMet()).as(periodLabel + " minPaymentCriteriaMet")
-                        .isEqualTo(Boolean.parseBoolean(criteriaMetStr));
-            }
+            final int periodNumber = i + 1;
+            expectedRows.get(i).forEach((field, value) -> verifyFullScheduleField(actual, field, value, periodNumber));
         }
     }
 
     @Then("WC loan delinquency actions contain {int} action(s)")
     public void verifyActionCount(final int count) {
         final Long loanId = getLoanId();
-        final List<WorkingCapitalLoanDelinquencyActionData> actions = ok(
-                () -> fineractFeignClient.workingCapitalLoanDelinquencyActions().retrieveDelinquencyActions(loanId));
+        assertThat(retrieveDelinquencyActions(loanId)).hasSize(count);
+    }
 
-        assertThat(actions).hasSize(count);
+    @Then("WC loan has both PAUSE and RESCHEDULE delinquency actions")
+    public void verifyBothPauseAndRescheduleActions() {
+        final Long loanId = getLoanId();
+        final List<WorkingCapitalLoanDelinquencyActionData> actions = retrieveDelinquencyActions(loanId);
+        assertThat(actions.stream().map(a -> a.getAction().name()).toList()).as("Should contain both PAUSE and RESCHEDULE")
+                .contains("PAUSE", "RESCHEDULE");
+    }
+
+    @Then("WC loan last delinquency action has the following data:")
+    public void verifyLastActionContent(final DataTable table) {
+        final Long loanId = getLoanId();
+        final List<WorkingCapitalLoanDelinquencyActionData> actions = retrieveDelinquencyActions(loanId);
+        assertThat(actions).as("Actions should not be empty").isNotEmpty();
+
+        final WorkingCapitalLoanDelinquencyActionData last = actions.get(actions.size() - 1);
+        final List<Map<String, String>> rows = table.asMaps();
+        assertThat(rows).as("Expected exactly 1 data row").hasSize(1);
+        rows.get(0).forEach((field, value) -> verifyActionField(last, field, value));
+    }
+
+    @Then("WC loan delinquency range schedule periods have specific data:")
+    public void verifySpecificPeriods(final DataTable table) {
+        final Long loanId = getLoanId();
+        final List<WorkingCapitalLoanDelinquencyRangeScheduleData> periods = ok(
+                () -> fineractFeignClient.workingCapitalLoanDelinquencyRangeSchedule().retrieveDelinquencyRangeSchedule(loanId));
+
+        for (final Map<String, String> expected : table.asMaps()) {
+            final int periodNumber = Integer.parseInt(expected.get("periodNumber"));
+            final WorkingCapitalLoanDelinquencyRangeScheduleData actual = periods.stream()
+                    .filter(p -> p.getPeriodNumber().equals(periodNumber)).findFirst().orElse(null);
+            assertThat(actual).as("Period %d should exist", periodNumber).isNotNull();
+            expected.forEach((field, value) -> verifyFullScheduleField(actual, field, value, periodNumber));
+        }
+    }
+
+    @When("Admin creates WC delinquency reschedule action with decimal minimumPayment {string} and frequency {int} {word}")
+    public void createRescheduleActionWithDecimal(final String minimumPayment, final int frequency, final String frequencyType) {
+        createRescheduleActionInternal(new BigDecimal(minimumPayment), frequency, frequencyType);
+    }
+
+    private void createRescheduleActionInternal(final BigDecimal minimumPayment, final int frequency, final String frequencyType) {
+        final Long loanId = getLoanId();
+        final PostWorkingCapitalLoansDelinquencyActionRequest request = buildRescheduleRequest(minimumPayment, frequency, frequencyType);
+        log.info("Creating RESCHEDULE action for WC loan {}: minimumPayment={}, frequency={} {}", loanId, minimumPayment, frequency,
+                frequencyType);
+
+        final PostWorkingCapitalLoansDelinquencyActionResponse result = ok(
+                () -> fineractFeignClient.workingCapitalLoanDelinquencyActions().createDelinquencyAction(loanId, request));
+        assertThat(result).isNotNull();
+        assertThat(result.getResourceId()).isNotNull();
+        log.info("RESCHEDULE action created with id={}", result.getResourceId());
+    }
+
+    private List<WorkingCapitalLoanDelinquencyActionData> retrieveDelinquencyActions(final Long loanId) {
+        return ok(() -> fineractFeignClient.workingCapitalLoanDelinquencyActions().retrieveDelinquencyActions(loanId));
+    }
+
+    private void verifyActionField(final WorkingCapitalLoanDelinquencyActionData actual, final String field, final String expected) {
+        switch (field) {
+            case "action" -> assertThat(actual.getAction().name()).as("action").isEqualTo(expected);
+            case "startDate" -> assertThat(actual.getStartDate()).as("startDate").isEqualTo(LocalDate.parse(expected, DATE_FORMAT));
+            case "endDate" ->
+                verifyOptionalField(expected, v -> assertThat(actual.getEndDate()).as("endDate").isEqualTo(LocalDate.parse(v, DATE_FORMAT)),
+                        () -> assertThat(actual.getEndDate()).as("endDate").isNull());
+            case "minimumPayment" ->
+                assertThat(actual.getMinimumPayment()).as("minimumPayment").isEqualByComparingTo(new BigDecimal(expected));
+            case "frequency" -> assertThat(actual.getFrequency()).as("frequency").isEqualTo(Integer.parseInt(expected));
+            case "frequencyType" -> assertThat(actual.getFrequencyType().name()).as("frequencyType").isEqualTo(expected);
+            default -> throw new IllegalArgumentException("Unknown action field: " + field);
+        }
+    }
+
+    private void verifyFullScheduleField(final WorkingCapitalLoanDelinquencyRangeScheduleData actual, final String field,
+            final String expected, final int periodNumber) {
+        final String label = "Period " + periodNumber + " " + field;
+        switch (field) {
+            case "periodNumber" -> assertThat(actual.getPeriodNumber()).as(label).isEqualTo(Integer.parseInt(expected));
+            case "fromDate" -> assertThat(actual.getFromDate()).as(label).isEqualTo(LocalDate.parse(expected, DATE_FORMAT));
+            case "toDate" -> assertThat(actual.getToDate()).as(label).isEqualTo(LocalDate.parse(expected, DATE_FORMAT));
+            case "expectedAmount" -> assertThat(actual.getExpectedAmount()).as(label).isEqualByComparingTo(new BigDecimal(expected));
+            case "paidAmount" -> assertThat(actual.getPaidAmount()).as(label).isEqualByComparingTo(new BigDecimal(expected));
+            case "outstandingAmount" -> assertThat(actual.getOutstandingAmount()).as(label).isEqualByComparingTo(new BigDecimal(expected));
+            case "minPaymentCriteriaMet" -> verifyOptionalField(expected,
+                    v -> assertThat(actual.getMinPaymentCriteriaMet()).as(label).isEqualTo(Boolean.parseBoolean(v)),
+                    () -> assertThat(actual.getMinPaymentCriteriaMet()).as(label).isNull());
+            case "delinquentDays" ->
+                verifyOptionalField(expected, v -> assertThat(actual.getDelinquentDays()).as(label).isEqualTo(Long.parseLong(v)),
+                        () -> assertThat(actual.getDelinquentDays()).as(label).isNull());
+            case "delinquentAmount" -> verifyOptionalField(expected,
+                    v -> assertThat(actual.getDelinquentAmount()).as(label).isEqualByComparingTo(new BigDecimal(v)),
+                    () -> assertThat(actual.getDelinquentAmount()).as(label).isNull());
+            default -> throw new IllegalArgumentException("Unknown schedule field: " + field);
+        }
+    }
+
+    private void verifyOptionalField(final String expected, final Consumer<String> whenPresent, final Runnable whenAbsent) {
+        Optional.ofNullable(expected).filter(Predicate.not(String::isBlank)).ifPresentOrElse(whenPresent, whenAbsent);
     }
 
     private Long getLoanId() {
