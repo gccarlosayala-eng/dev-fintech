@@ -29,6 +29,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.Collections;
 import java.util.List;
+import org.apache.fineract.avro.loan.v1.LoanTransactionAdjustmentDataV1;
 import org.apache.fineract.avro.loan.v1.LoanTransactionDataV1;
 import org.apache.fineract.avro.loan.v1.OriginatorDetailsV1;
 import org.apache.fineract.portfolio.loanorigination.helper.LoanOriginatorDetailsResolver;
@@ -40,27 +41,33 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class LoanTransactionDataV1OriginatorEnricherTest {
+class LoanTransactionAdjustmentDataV1OriginatorEnricherTest {
 
     @Mock
     private LoanOriginatorDetailsResolver loanOriginatorDetailsResolver;
 
     @InjectMocks
-    private LoanTransactionDataV1OriginatorEnricher enricher;
+    private LoanTransactionAdjustmentDataV1OriginatorEnricher enricher;
 
-    private LoanTransactionDataV1 loanTransactionData;
+    private LoanTransactionAdjustmentDataV1 adjustmentData;
+    private LoanTransactionDataV1 transactionToAdjust;
+    private LoanTransactionDataV1 newTransactionDetail;
     private Long loanId;
 
     @BeforeEach
     void setUp() {
         loanId = 1L;
-        loanTransactionData = new LoanTransactionDataV1();
-        loanTransactionData.setLoanId(loanId);
+        transactionToAdjust = new LoanTransactionDataV1();
+        transactionToAdjust.setLoanId(loanId);
+        newTransactionDetail = new LoanTransactionDataV1();
+        adjustmentData = new LoanTransactionAdjustmentDataV1();
+        adjustmentData.setTransactionToAdjust(transactionToAdjust);
+        adjustmentData.setNewTransactionDetail(newTransactionDetail);
     }
 
     @Test
     void testIsDataTypeSupported() {
-        assertTrue(enricher.isDataTypeSupported(LoanTransactionDataV1.class));
+        assertTrue(enricher.isDataTypeSupported(LoanTransactionAdjustmentDataV1.class));
     }
 
     @Test
@@ -70,13 +77,16 @@ class LoanTransactionDataV1OriginatorEnricherTest {
         when(loanOriginatorDetailsResolver.resolveOriginatorDetails(loanId)).thenReturn(List.of(originatorDetails));
 
         // When
-        enricher.enrich(loanTransactionData);
+        enricher.enrich(adjustmentData);
 
         // Then
         verify(loanOriginatorDetailsResolver).resolveOriginatorDetails(loanId);
-        assertNotNull(loanTransactionData.getOriginators());
-        assertEquals(1, loanTransactionData.getOriginators().size());
-        assertEquals("test-originator-1", loanTransactionData.getOriginators().getFirst().getExternalId());
+        assertNotNull(transactionToAdjust.getOriginators());
+        assertEquals(1, transactionToAdjust.getOriginators().size());
+        assertEquals("test-originator-1", transactionToAdjust.getOriginators().getFirst().getExternalId());
+        assertNotNull(newTransactionDetail.getOriginators());
+        assertEquals(1, newTransactionDetail.getOriginators().size());
+        assertEquals("test-originator-1", newTransactionDetail.getOriginators().getFirst().getExternalId());
     }
 
     @Test
@@ -87,11 +97,29 @@ class LoanTransactionDataV1OriginatorEnricherTest {
         when(loanOriginatorDetailsResolver.resolveOriginatorDetails(loanId)).thenReturn(List.of(details1, details2));
 
         // When
-        enricher.enrich(loanTransactionData);
+        enricher.enrich(adjustmentData);
 
         // Then
-        assertNotNull(loanTransactionData.getOriginators());
-        assertEquals(2, loanTransactionData.getOriginators().size());
+        assertNotNull(transactionToAdjust.getOriginators());
+        assertEquals(2, transactionToAdjust.getOriginators().size());
+        assertNotNull(newTransactionDetail.getOriginators());
+        assertEquals(2, newTransactionDetail.getOriginators().size());
+    }
+
+    @Test
+    void testEnrich_WithOriginators_NullNewTransactionDetail() {
+        // Given
+        adjustmentData.setNewTransactionDetail(null);
+        final OriginatorDetailsV1 originatorDetails = createOriginatorDetailsV1(1L, "test-originator-1", "Test Originator 1");
+        when(loanOriginatorDetailsResolver.resolveOriginatorDetails(loanId)).thenReturn(List.of(originatorDetails));
+
+        // When
+        enricher.enrich(adjustmentData);
+
+        // Then
+        assertNotNull(transactionToAdjust.getOriginators());
+        assertEquals(1, transactionToAdjust.getOriginators().size());
+        assertNull(adjustmentData.getNewTransactionDetail());
     }
 
     @Test
@@ -100,33 +128,37 @@ class LoanTransactionDataV1OriginatorEnricherTest {
         when(loanOriginatorDetailsResolver.resolveOriginatorDetails(loanId)).thenReturn(Collections.emptyList());
 
         // When
-        enricher.enrich(loanTransactionData);
+        enricher.enrich(adjustmentData);
 
         // Then
         verify(loanOriginatorDetailsResolver).resolveOriginatorDetails(loanId);
-        assertNull(loanTransactionData.getOriginators());
+        assertNull(transactionToAdjust.getOriginators());
+        assertNull(newTransactionDetail.getOriginators());
+    }
+
+    @Test
+    void testEnrich_NullTransactionToAdjust() {
+        // Given
+        adjustmentData.setTransactionToAdjust(null);
+
+        // When
+        enricher.enrich(adjustmentData);
+
+        // Then
+        verify(loanOriginatorDetailsResolver, never()).resolveOriginatorDetails(any());
     }
 
     @Test
     void testEnrich_NullLoanId() {
         // Given
-        loanTransactionData.setLoanId(null);
+        transactionToAdjust.setLoanId(null);
 
         // When
-        enricher.enrich(loanTransactionData);
+        enricher.enrich(adjustmentData);
 
         // Then
         verify(loanOriginatorDetailsResolver, never()).resolveOriginatorDetails(any());
-        assertNull(loanTransactionData.getOriginators());
-    }
-
-    @Test
-    void testEnrich_NullData() {
-        // When
-        enricher.enrich(null);
-
-        // Then
-        verify(loanOriginatorDetailsResolver, never()).resolveOriginatorDetails(any());
+        assertNull(transactionToAdjust.getOriginators());
     }
 
     private OriginatorDetailsV1 createOriginatorDetailsV1(final Long id, final String externalId, final String name) {
