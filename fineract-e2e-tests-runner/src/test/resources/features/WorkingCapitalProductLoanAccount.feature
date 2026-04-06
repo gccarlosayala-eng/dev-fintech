@@ -776,6 +776,19 @@ Feature: WorkingCapitalLoanAccount
       | product.name | submittedOnDate | expectedDisbursementDate | status | principal | approvedPrincipal | totalPayment | periodPaymentRate | discount |
       | WCLP         | 2026-01-01      | 2026-01-01               | Active | 100.0     | 100.0             | 100.0        | 1.0               | 0.0      |
 
+  @TestRailId:C74514
+  Scenario: Disburse WCL loan account with classification use case - UC2.1
+    When Admin sets the business date to "01 January 2026"
+    And Admin creates a client with random data
+    And Admin creates a working capital loan with the following data:
+      | LoanProduct | submittedOnDate | expectedDisbursementDate | principalAmount | totalPayment | periodPaymentRate | discount |
+      | WCLP        | 01 January 2026 | 01 January 2026          | 100             | 100          | 1                 | 0        |
+    Then Working capital loan creation was successful
+    Then Admin successfully approves the working capital loan on "01 January 2026" with "100" amount and expected disbursement date on "01 January 2026"
+    Then Admin successfully disburse the Working Capital loan on "01 January 2026" with "100" EUR transaction amount and valid classification
+    Then Verify Working Capital loan disbursement transaction has classification
+    Then Working Capital loan status will be "ACTIVE"
+
   @TestRailId:C72373
   Scenario Outline: Disburse WCL loan account with invalid data outcomes with an error - UC3
     When Admin sets the business date to "01 January 2026"
@@ -864,12 +877,14 @@ Feature: WorkingCapitalLoanAccount
       | WCLP         | 2026-01-01      | 2026-01-01               | Submitted and pending approval | 100.0     | 0.0               | 100.0        | 1.0               | 0.0      |
     Then Admin successfully approves the working capital loan on "01 January 2026" with "100" amount and expected disbursement date on "01 January 2026"
     Then Admin successfully disburse the Working Capital loan by externalId on "01 January 2026" with "100" EUR transaction amount
+    Then Working Capital disbursal transaction business event is raised with "100" amount and reversed "false"
     Then Working Capital loan status will be "ACTIVE"
     Then Verify Working Capital loan disbursement was successful
     And Working capital loan account has the correct data:
       | product.name | submittedOnDate | expectedDisbursementDate | status | principal | approvedPrincipal | totalPayment | periodPaymentRate | discount |
       | WCLP         | 2026-01-01      | 2026-01-01               | Active | 100.0     | 100.0             | 100.0        | 1.0               | 0.0      |
     Then Admin successfully undo Working Capital disbursal by externalId
+    Then Working Capital undo disbursal transaction business event is raised with "100" amount and reversed "true"
     And Working capital loan account has the correct data:
       | product.name | submittedOnDate | expectedDisbursementDate | status   | principal | approvedPrincipal | totalPayment | periodPaymentRate | discount |
       | WCLP         | 2026-01-01      | 2026-01-01               | Approved | 100.0     | 100.0             | 100.0        | 1.0               | 0.0      |
