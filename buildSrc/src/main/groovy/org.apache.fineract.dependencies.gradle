@@ -288,7 +288,7 @@ dependencyManagement {
             exclude 'org.mockito:mockito-core'
         }
 
-        dependency 'com.ibm.icu:icu4j:76.1'
+        dependency 'com.ibm.icu:icu4j:78.3'
         dependency 'org.yakworks:spring-icu4j:0.4.2'
         dependency 'org.apache.commons:commons-lang3:3.18.0'
         dependency 'com.nimbusds:nimbus-jose-jwt:10.0.2'
