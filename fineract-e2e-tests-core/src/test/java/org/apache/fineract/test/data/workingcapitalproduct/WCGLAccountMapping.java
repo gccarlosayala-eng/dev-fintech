@@ -24,14 +24,20 @@ import org.apache.fineract.client.models.PostWorkingCapitalLoanProductsRequest;
 
 public record WCGLAccountMapping(String responseKey, boolean required, Function<PostWorkingCapitalLoanProductsRequest, Long> extractor) {
 
+    // Assets (required)
     public static final WCGLAccountMapping FUND_SOURCE = new WCGLAccountMapping("fundSourceAccount", true,
             PostWorkingCapitalLoanProductsRequest::getFundSourceAccountId);
     public static final WCGLAccountMapping LOAN_PORTFOLIO = new WCGLAccountMapping("loanPortfolioAccount", true,
             PostWorkingCapitalLoanProductsRequest::getLoanPortfolioAccountId);
     public static final WCGLAccountMapping TRANSFERS_IN_SUSPENSE = new WCGLAccountMapping("transfersInSuspenseAccount", true,
             PostWorkingCapitalLoanProductsRequest::getTransfersInSuspenseAccountId);
+    // Liabilities (required)
     public static final WCGLAccountMapping DEFERRED_INCOME_LIABILITY = new WCGLAccountMapping("deferredIncomeLiabilityAccount", true,
             PostWorkingCapitalLoanProductsRequest::getDeferredIncomeLiabilityAccountId);
+    public static final WCGLAccountMapping OVERPAYMENT_LIABILITY = new WCGLAccountMapping("overpaymentLiabilityAccount", true,
+            PostWorkingCapitalLoanProductsRequest::getOverpaymentLiabilityAccountId);
+
+    // Income (required)
     public static final WCGLAccountMapping INCOME_FROM_DISCOUNT_FEE = new WCGLAccountMapping("incomeFromDiscountFeeAccount", true,
             PostWorkingCapitalLoanProductsRequest::getIncomeFromDiscountFeeAccountId);
     public static final WCGLAccountMapping INCOME_FROM_FEE = new WCGLAccountMapping("incomeFromFeeAccount", true,
@@ -40,25 +46,24 @@ public record WCGLAccountMapping(String responseKey, boolean required, Function<
             PostWorkingCapitalLoanProductsRequest::getIncomeFromPenaltyAccountId);
     public static final WCGLAccountMapping INCOME_FROM_RECOVERY = new WCGLAccountMapping("incomeFromRecoveryAccount", true,
             PostWorkingCapitalLoanProductsRequest::getIncomeFromRecoveryAccountId);
+
+    // Expense (required)
     public static final WCGLAccountMapping WRITE_OFF = new WCGLAccountMapping("writeOffAccount", true,
             PostWorkingCapitalLoanProductsRequest::getWriteOffAccountId);
-    public static final WCGLAccountMapping OVERPAYMENT_LIABILITY = new WCGLAccountMapping("overpaymentLiabilityAccount", true,
-            PostWorkingCapitalLoanProductsRequest::getOverpaymentLiabilityAccountId);
+
+    // Optional — expense
     public static final WCGLAccountMapping GOODWILL_CREDIT = new WCGLAccountMapping("goodwillCreditAccount", false,
             PostWorkingCapitalLoanProductsRequest::getGoodwillCreditAccountId);
     public static final WCGLAccountMapping CHARGE_OFF_EXPENSE = new WCGLAccountMapping("chargeOffExpenseAccount", false,
             PostWorkingCapitalLoanProductsRequest::getChargeOffExpenseAccountId);
     public static final WCGLAccountMapping CHARGE_OFF_FRAUD_EXPENSE = new WCGLAccountMapping("chargeOffFraudExpenseAccount", false,
             PostWorkingCapitalLoanProductsRequest::getChargeOffFraudExpenseAccountId);
-    public static final WCGLAccountMapping INCOME_FROM_CHARGE_OFF_INTEREST = new WCGLAccountMapping("incomeFromChargeOffInterestAccount",
-            false, PostWorkingCapitalLoanProductsRequest::getIncomeFromChargeOffInterestAccountId);
+
+    // Optional — income (charge-off / goodwill)
     public static final WCGLAccountMapping INCOME_FROM_CHARGE_OFF_FEES = new WCGLAccountMapping("incomeFromChargeOffFeesAccount", false,
             PostWorkingCapitalLoanProductsRequest::getIncomeFromChargeOffFeesAccountId);
     public static final WCGLAccountMapping INCOME_FROM_CHARGE_OFF_PENALTY = new WCGLAccountMapping("incomeFromChargeOffPenaltyAccount",
             false, PostWorkingCapitalLoanProductsRequest::getIncomeFromChargeOffPenaltyAccountId);
-    public static final WCGLAccountMapping INCOME_FROM_GOODWILL_CREDIT_INTEREST = new WCGLAccountMapping(
-            "incomeFromGoodwillCreditInterestAccount", false,
-            PostWorkingCapitalLoanProductsRequest::getIncomeFromGoodwillCreditInterestAccountId);
     public static final WCGLAccountMapping INCOME_FROM_GOODWILL_CREDIT_FEES = new WCGLAccountMapping("incomeFromGoodwillCreditFeesAccount",
             false, PostWorkingCapitalLoanProductsRequest::getIncomeFromGoodwillCreditFeesAccountId);
     public static final WCGLAccountMapping INCOME_FROM_GOODWILL_CREDIT_PENALTY = new WCGLAccountMapping(
@@ -66,10 +71,9 @@ public record WCGLAccountMapping(String responseKey, boolean required, Function<
             PostWorkingCapitalLoanProductsRequest::getIncomeFromGoodwillCreditPenaltyAccountId);
 
     private static final List<WCGLAccountMapping> VALUES = List.of(FUND_SOURCE, LOAN_PORTFOLIO, TRANSFERS_IN_SUSPENSE,
-            DEFERRED_INCOME_LIABILITY, INCOME_FROM_DISCOUNT_FEE, INCOME_FROM_FEE, INCOME_FROM_PENALTY, INCOME_FROM_RECOVERY, WRITE_OFF,
-            OVERPAYMENT_LIABILITY, GOODWILL_CREDIT, CHARGE_OFF_EXPENSE, CHARGE_OFF_FRAUD_EXPENSE, INCOME_FROM_CHARGE_OFF_INTEREST,
-            INCOME_FROM_CHARGE_OFF_FEES, INCOME_FROM_CHARGE_OFF_PENALTY, INCOME_FROM_GOODWILL_CREDIT_INTEREST,
-            INCOME_FROM_GOODWILL_CREDIT_FEES, INCOME_FROM_GOODWILL_CREDIT_PENALTY);
+            DEFERRED_INCOME_LIABILITY, OVERPAYMENT_LIABILITY, INCOME_FROM_DISCOUNT_FEE, INCOME_FROM_FEE, INCOME_FROM_PENALTY,
+            INCOME_FROM_RECOVERY, WRITE_OFF, GOODWILL_CREDIT, CHARGE_OFF_EXPENSE, CHARGE_OFF_FRAUD_EXPENSE, INCOME_FROM_CHARGE_OFF_FEES,
+            INCOME_FROM_CHARGE_OFF_PENALTY, INCOME_FROM_GOODWILL_CREDIT_FEES, INCOME_FROM_GOODWILL_CREDIT_PENALTY);
 
     public static List<WCGLAccountMapping> all() {
         return VALUES;

@@ -460,19 +460,7 @@ public class WorkingCapitalStepDef extends AbstractStepDef {
 
         final PostWorkingCapitalLoanProductsRequest cashRequest = workingCapitalRequestFactory
                 .defaultWorkingCapitalLoanProductRequestWithCashAccounting();
-        final PutWorkingCapitalLoanProductsProductIdRequest updateRequest = new PutWorkingCapitalLoanProductsProductIdRequest()//
-                .locale("en")//
-                .accountingRule(PutWorkingCapitalLoanProductsProductIdRequest.AccountingRuleEnum.CASH_BASED)//
-                .fundSourceAccountId(cashRequest.getFundSourceAccountId())//
-                .loanPortfolioAccountId(cashRequest.getLoanPortfolioAccountId())//
-                .transfersInSuspenseAccountId(cashRequest.getTransfersInSuspenseAccountId())//
-                .deferredIncomeLiabilityAccountId(cashRequest.getDeferredIncomeLiabilityAccountId())//
-                .incomeFromDiscountFeeAccountId(cashRequest.getIncomeFromDiscountFeeAccountId())//
-                .incomeFromFeeAccountId(cashRequest.getIncomeFromFeeAccountId())//
-                .incomeFromPenaltyAccountId(cashRequest.getIncomeFromPenaltyAccountId())//
-                .incomeFromRecoveryAccountId(cashRequest.getIncomeFromRecoveryAccountId())//
-                .writeOffAccountId(cashRequest.getWriteOffAccountId())//
-                .overpaymentLiabilityAccountId(cashRequest.getOverpaymentLiabilityAccountId());
+        final PutWorkingCapitalLoanProductsProductIdRequest updateRequest = buildCashBasedUpdateRequest(cashRequest);
 
         final PutWorkingCapitalLoanProductsProductIdResponse response = ok(
                 () -> workingCapitalApi().updateWorkingCapitalLoanProduct(resourceId, updateRequest, Map.of()));
@@ -558,7 +546,7 @@ public class WorkingCapitalStepDef extends AbstractStepDef {
         assertions.assertThat(product.getAccountingRule()).isNotNull();
         assertions.assertThat(product.getAccountingRule().getId()).isEqualTo("CASH_BASED");
 
-        final Map<String, Object> mappings = product.getAccountingMappings();
+        final Map<String, ?> mappings = product.getAccountingMappings();
         final List<WCGLAccountMapping> expectedMappings = WCGLAccountMapping.all().stream()
                 .filter(mapping -> mapping.required() || mapping.extractor().apply(createRequest) != null).toList();
 
@@ -624,18 +612,7 @@ public class WorkingCapitalStepDef extends AbstractStepDef {
         final Long newWriteOffAccountId = accountTypeResolver.resolve(DefaultAccountType.CREDIT_LOSS_BAD_DEBT);
 
         // Validator requires all mandatory GL accounts when accountingRule is present — re-send originals
-        final PutWorkingCapitalLoanProductsProductIdRequest updateRequest = new PutWorkingCapitalLoanProductsProductIdRequest()//
-                .locale("en")//
-                .accountingRule(PutWorkingCapitalLoanProductsProductIdRequest.AccountingRuleEnum.CASH_BASED)//
-                .fundSourceAccountId(originalRequest.getFundSourceAccountId())//
-                .loanPortfolioAccountId(originalRequest.getLoanPortfolioAccountId())//
-                .transfersInSuspenseAccountId(originalRequest.getTransfersInSuspenseAccountId())//
-                .deferredIncomeLiabilityAccountId(originalRequest.getDeferredIncomeLiabilityAccountId())//
-                .incomeFromDiscountFeeAccountId(originalRequest.getIncomeFromDiscountFeeAccountId())//
-                .incomeFromFeeAccountId(originalRequest.getIncomeFromFeeAccountId())//
-                .incomeFromPenaltyAccountId(originalRequest.getIncomeFromPenaltyAccountId())//
-                .incomeFromRecoveryAccountId(originalRequest.getIncomeFromRecoveryAccountId())//
-                .overpaymentLiabilityAccountId(originalRequest.getOverpaymentLiabilityAccountId())//
+        final PutWorkingCapitalLoanProductsProductIdRequest updateRequest = buildCashBasedUpdateRequest(originalRequest)//
                 .writeOffAccountId(newWriteOffAccountId);
 
         ok(() -> workingCapitalApi().updateWorkingCapitalLoanProduct(resourceId, updateRequest, Map.of()));
@@ -653,9 +630,9 @@ public class WorkingCapitalStepDef extends AbstractStepDef {
         final GetWorkingCapitalLoanProductsProductIdResponse product = workingCapitalApi().retrieveOneWorkingCapitalLoanProduct(resourceId,
                 Map.of());
 
-        assertThat(product.getAccountingMappings()).isNotNull();
-        assertGLAccountMappingId(product.getAccountingMappings(), WCGLAccountMapping.WRITE_OFF.responseKey(),
-                updateRequest.getWriteOffAccountId());
+        final Map<String, ?> mappings = product.getAccountingMappings();
+        assertThat(mappings).isNotNull();
+        assertGLAccountMappingId(mappings, WCGLAccountMapping.WRITE_OFF.responseKey(), updateRequest.getWriteOffAccountId());
     }
 
     @Then("Admin verifies Working Capital Loan Product list contains the product with accounting rule {string}")
@@ -708,27 +685,35 @@ public class WorkingCapitalStepDef extends AbstractStepDef {
         assertThat(template.getAccountingMappingOptions()).isNotEmpty();
     }
 
-    private void assertGLAccountMappingId(final SoftAssertions assertions, final Map<String, Object> mappings, final String key,
+    private void assertGLAccountMappingId(final SoftAssertions assertions, final Map<String, ?> mappings, final String key,
             final Long expectedAccountId) {
         assertions.assertThat(mappings).as("accountingMappings should contain key: %s", key).containsKey(key);
         final Object value = mappings.get(key);
-        if (!(value instanceof Map<?, ?> accountData)) {
-            assertions.fail("accountingMappings[%s] expected Map but was: %s", key, typeName(value));
+        final Long actualId = extractAccountId(value);
+        if (actualId == null) {
+            assertions.fail("accountingMappings[%s]: could not extract id from %s", key,
+                    value != null ? value.getClass().getSimpleName() : "null");
             return;
         }
-        final Object idValue = accountData.get("id");
-        if (!(idValue instanceof Number idNumber)) {
-            assertions.fail("accountingMappings[%s].id expected Number but was: %s", key, typeName(idValue));
-            return;
+        assertions.assertThat(actualId).as("GL account id for %s", key).isEqualTo(expectedAccountId);
+    }
+
+    private Long extractAccountId(final Object accountValue) {
+        if (accountValue instanceof Map<?, ?> map) {
+            final Object id = map.get("id");
+            return id instanceof Number n ? n.longValue() : null;
         }
-        assertions.assertThat(idNumber.longValue()).as("GL account id for %s", key).isEqualTo(expectedAccountId);
+        // Handle strongly-typed GLAccountData (CI-generated client)
+        try {
+            final var method = accountValue.getClass().getMethod("getId");
+            final Object id = method.invoke(accountValue);
+            return id instanceof Number n ? n.longValue() : null;
+        } catch (Exception e) {
+            return null;
+        }
     }
 
-    private static String typeName(final Object obj) {
-        return obj != null ? obj.getClass().getSimpleName() : "null";
-    }
-
-    private void assertGLAccountMappingId(final Map<String, Object> mappings, final String key, final Long expectedAccountId) {
+    private void assertGLAccountMappingId(final Map<String, ?> mappings, final String key, final Long expectedAccountId) {
         final SoftAssertions assertions = new SoftAssertions();
         assertGLAccountMappingId(assertions, mappings, key, expectedAccountId);
         assertions.assertAll();
@@ -747,6 +732,22 @@ public class WorkingCapitalStepDef extends AbstractStepDef {
             log.error("FAILED to create working capital product '{}'", workingCapitalProductName, e);
             throw e;
         }
+    }
+
+    private PutWorkingCapitalLoanProductsProductIdRequest buildCashBasedUpdateRequest(final PostWorkingCapitalLoanProductsRequest source) {
+        return new PutWorkingCapitalLoanProductsProductIdRequest()//
+                .locale("en")//
+                .accountingRule(PutWorkingCapitalLoanProductsProductIdRequest.AccountingRuleEnum.CASH_BASED)//
+                .fundSourceAccountId(source.getFundSourceAccountId())//
+                .loanPortfolioAccountId(source.getLoanPortfolioAccountId())//
+                .transfersInSuspenseAccountId(source.getTransfersInSuspenseAccountId())//
+                .deferredIncomeLiabilityAccountId(source.getDeferredIncomeLiabilityAccountId())//
+                .incomeFromDiscountFeeAccountId(source.getIncomeFromDiscountFeeAccountId())//
+                .incomeFromFeeAccountId(source.getIncomeFromFeeAccountId())//
+                .incomeFromPenaltyAccountId(source.getIncomeFromPenaltyAccountId())//
+                .incomeFromRecoveryAccountId(source.getIncomeFromRecoveryAccountId())//
+                .writeOffAccountId(source.getWriteOffAccountId())//
+                .overpaymentLiabilityAccountId(source.getOverpaymentLiabilityAccountId());
     }
 
     public void checkWorkingCapitalLoanProductCreate() {

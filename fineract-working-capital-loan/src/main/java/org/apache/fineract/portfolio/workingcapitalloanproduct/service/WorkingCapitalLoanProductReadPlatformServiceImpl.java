@@ -77,7 +77,7 @@ public class WorkingCapitalLoanProductReadPlatformServiceImpl implements Working
         final WorkingCapitalLoanProductData productData = this.mapper.toData(product);
 
         if (product.getAccountingRule().isCashBased()) {
-            final Map<String, Object> accountingMappings = this.wcAccountingMappingService.fetchAccountMappingDetails(productId,
+            final Map<String, GLAccountData> accountingMappings = this.wcAccountingMappingService.fetchAccountMappingDetails(productId,
                     product.getAccountingRule());
             productData.setAccountingMappings(accountingMappings);
         }

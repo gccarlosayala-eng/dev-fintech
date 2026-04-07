@@ -19,6 +19,7 @@
 package org.apache.fineract.portfolio.workingcapitalloanproduct.service;
 
 import java.util.Map;
+import org.apache.fineract.accounting.glaccount.data.GLAccountData;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.portfolio.workingcapitalloanproduct.domain.WorkingCapitalAccountingRuleType;
 
@@ -31,5 +32,5 @@ public interface WorkingCapitalProductAccountingMappingService {
 
     void deleteAccountMapping(Long wcLoanProductId);
 
-    Map<String, Object> fetchAccountMappingDetails(Long wcLoanProductId, WorkingCapitalAccountingRuleType accountingRuleType);
+    Map<String, GLAccountData> fetchAccountMappingDetails(Long wcLoanProductId, WorkingCapitalAccountingRuleType accountingRuleType);
 }

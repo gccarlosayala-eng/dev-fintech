@@ -23,6 +23,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import org.apache.fineract.accounting.glaccount.data.GLAccountData;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.data.StringEnumOptionData;
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
@@ -118,7 +119,7 @@ public final class WorkingCapitalLoanProductApiResourceSwagger {
         public Long deferredIncomeLiabilityAccountId;
         @Schema(example = "5")
         public Long incomeFromDiscountFeeAccountId;
-        @Schema(example = "5")
+        @Schema(example = "6")
         public Long incomeFromFeeAccountId;
         @Schema(example = "6")
         public Long incomeFromPenaltyAccountId;
@@ -129,16 +130,12 @@ public final class WorkingCapitalLoanProductApiResourceSwagger {
         @Schema(example = "9")
         public Long overpaymentLiabilityAccountId;
         @Schema(example = "10")
-        public Long incomeFromChargeOffInterestAccountId;
-        @Schema(example = "11")
         public Long incomeFromChargeOffFeesAccountId;
-        @Schema(example = "12")
+        @Schema(example = "11")
         public Long incomeFromChargeOffPenaltyAccountId;
-        @Schema(example = "13")
-        public Long incomeFromGoodwillCreditInterestAccountId;
-        @Schema(example = "14")
+        @Schema(example = "12")
         public Long incomeFromGoodwillCreditFeesAccountId;
-        @Schema(example = "15")
+        @Schema(example = "13")
         public Long incomeFromGoodwillCreditPenaltyAccountId;
         @Schema(example = "16")
         public Long goodwillCreditAccountId;
@@ -267,7 +264,7 @@ public final class WorkingCapitalLoanProductApiResourceSwagger {
 
         // Accounting
         public StringEnumOptionData accountingRule;
-        public Map<String, Object> accountingMappings;
+        public Map<String, GLAccountData> accountingMappings;
 
         @Schema(description = "GetDelinquencyBucket")
         public static final class GetDelinquencyBucket {
@@ -433,7 +430,7 @@ public final class WorkingCapitalLoanProductApiResourceSwagger {
 
         // Accounting
         public StringEnumOptionData accountingRule;
-        public Map<String, Object> accountingMappings;
+        public Map<String, GLAccountData> accountingMappings;
     }
 
     @Schema(description = "PutWorkingCapitalLoanProductsProductIdRequest")
@@ -518,7 +515,7 @@ public final class WorkingCapitalLoanProductApiResourceSwagger {
         public Long deferredIncomeLiabilityAccountId;
         @Schema(example = "5")
         public Long incomeFromDiscountFeeAccountId;
-        @Schema(example = "5")
+        @Schema(example = "6")
         public Long incomeFromFeeAccountId;
         @Schema(example = "6")
         public Long incomeFromPenaltyAccountId;
@@ -529,16 +526,12 @@ public final class WorkingCapitalLoanProductApiResourceSwagger {
         @Schema(example = "9")
         public Long overpaymentLiabilityAccountId;
         @Schema(example = "10")
-        public Long incomeFromChargeOffInterestAccountId;
-        @Schema(example = "11")
         public Long incomeFromChargeOffFeesAccountId;
-        @Schema(example = "12")
+        @Schema(example = "11")
         public Long incomeFromChargeOffPenaltyAccountId;
-        @Schema(example = "13")
-        public Long incomeFromGoodwillCreditInterestAccountId;
-        @Schema(example = "14")
+        @Schema(example = "12")
         public Long incomeFromGoodwillCreditFeesAccountId;
-        @Schema(example = "15")
+        @Schema(example = "13")
         public Long incomeFromGoodwillCreditPenaltyAccountId;
         @Schema(example = "16")
         public Long goodwillCreditAccountId;

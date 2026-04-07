@@ -85,9 +85,9 @@ public class WorkingCapitalProductAccountingMappingServiceImpl implements Workin
 
     @Override
     @Transactional(readOnly = true)
-    public Map<String, Object> fetchAccountMappingDetails(final Long wcLoanProductId,
+    public Map<String, GLAccountData> fetchAccountMappingDetails(final Long wcLoanProductId,
             final WorkingCapitalAccountingRuleType accountingRuleType) {
-        final Map<String, Object> accountMappingDetails = new LinkedHashMap<>(8);
+        final Map<String, GLAccountData> accountMappingDetails = new LinkedHashMap<>(8);
 
         if (!accountingRuleType.isCashBased()) {
             return accountMappingDetails;

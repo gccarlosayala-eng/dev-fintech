@@ -86,7 +86,7 @@ public class WorkingCapitalLoanProductData implements Serializable {
 
     // Accounting
     private StringEnumOptionData accountingRule;
-    private Map<String, Object> accountingMappings;
+    private Map<String, GLAccountData> accountingMappings;
 
     // Template related
     private Collection<FundData> fundOptions;

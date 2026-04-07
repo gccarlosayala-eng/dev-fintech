@@ -84,24 +84,25 @@ public class WorkingCapitalRequestFactory {
                 .writeOffAccountId(accountTypeResolver.resolve(DefaultAccountType.WRITTEN_OFF))//
                 .overpaymentLiabilityAccountId(accountTypeResolver.resolve(DefaultAccountType.OVERPAYMENT_ACCOUNT))//
                 .goodwillCreditAccountId(accountTypeResolver.resolve(DefaultAccountType.GOODWILL_EXPENSE_ACCOUNT))//
-                .incomeFromGoodwillCreditInterestAccountId(accountTypeResolver.resolve(DefaultAccountType.INTEREST_INCOME_CHARGE_OFF))//
                 .incomeFromGoodwillCreditFeesAccountId(accountTypeResolver.resolve(DefaultAccountType.FEE_CHARGE_OFF))//
                 .incomeFromGoodwillCreditPenaltyAccountId(accountTypeResolver.resolve(DefaultAccountType.FEE_CHARGE_OFF))//
-                .incomeFromChargeOffInterestAccountId(accountTypeResolver.resolve(DefaultAccountType.INTEREST_INCOME_CHARGE_OFF))//
                 .incomeFromChargeOffFeesAccountId(accountTypeResolver.resolve(DefaultAccountType.FEE_CHARGE_OFF))//
                 .incomeFromChargeOffPenaltyAccountId(accountTypeResolver.resolve(DefaultAccountType.FEE_CHARGE_OFF))//
                 .chargeOffExpenseAccountId(accountTypeResolver.resolve(DefaultAccountType.CREDIT_LOSS_BAD_DEBT))//
                 .chargeOffFraudExpenseAccountId(accountTypeResolver.resolve(DefaultAccountType.CREDIT_LOSS_BAD_DEBT_FRAUD));//
     }
 
+    /**
+     * Creates a Cash based accounting request where optional Income-type GL accounts are overridden with distinct (but
+     * still type-correct) accounts to verify each mapping is stored and returned independently.
+     */
     public PostWorkingCapitalLoanProductsRequest defaultWorkingCapitalLoanProductRequestWithDistinctCashAccountingMappings() {
         return defaultWorkingCapitalLoanProductRequestWithCashAccounting()//
-                .incomeFromPenaltyAccountId(accountTypeResolver.resolve(DefaultAccountType.DEFERRED_INTEREST_REVENUE))//
-                .incomeFromGoodwillCreditFeesAccountId(accountTypeResolver.resolve(DefaultAccountType.RETAINED_EARNINGS_PRIOR_YEAR))//
-                .incomeFromGoodwillCreditPenaltyAccountId(accountTypeResolver.resolve(DefaultAccountType.INCOME_FROM_BUY_DOWN))//
-                .incomeFromChargeOffInterestAccountId(accountTypeResolver.resolve(DefaultAccountType.RECOVERIES))//
-                .incomeFromChargeOffFeesAccountId(accountTypeResolver.resolve(DefaultAccountType.FEE_INCOME))//
-                .incomeFromChargeOffPenaltyAccountId(accountTypeResolver.resolve(DefaultAccountType.DEFERRED_INTEREST_REVENUE));
+                .incomeFromPenaltyAccountId(accountTypeResolver.resolve(DefaultAccountType.RECOVERIES))//
+                .incomeFromGoodwillCreditFeesAccountId(accountTypeResolver.resolve(DefaultAccountType.INTEREST_INCOME_CHARGE_OFF))//
+                .incomeFromGoodwillCreditPenaltyAccountId(accountTypeResolver.resolve(DefaultAccountType.FEE_INCOME))//
+                .incomeFromChargeOffFeesAccountId(accountTypeResolver.resolve(DefaultAccountType.RECOVERIES))//
+                .incomeFromChargeOffPenaltyAccountId(accountTypeResolver.resolve(DefaultAccountType.INTEREST_INCOME_CHARGE_OFF));
     }
 
     public PostWorkingCapitalLoanProductsRequest defaultWorkingCapitalLoanProductRequest() {
