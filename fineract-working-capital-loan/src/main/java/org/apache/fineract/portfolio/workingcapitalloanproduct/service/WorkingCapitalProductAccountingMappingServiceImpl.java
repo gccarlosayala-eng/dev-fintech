@@ -110,8 +110,10 @@ public class WorkingCapitalProductAccountingMappingServiceImpl implements Workin
                 case LOAN_PORTFOLIO -> accountMappingDetails.put(LoanProductAccountingDataParams.LOAN_PORTFOLIO.getValue(), glAccountData);
                 case TRANSFERS_SUSPENSE ->
                     accountMappingDetails.put(LoanProductAccountingDataParams.TRANSFERS_SUSPENSE.getValue(), glAccountData);
-                case INTEREST_ON_LOANS ->
-                    accountMappingDetails.put(LoanProductAccountingDataParams.INTEREST_ON_LOANS.getValue(), glAccountData);
+                case INCOME_FROM_DISCOUNT_FEE ->
+                    accountMappingDetails.put(LoanProductAccountingDataParams.INCOME_FROM_DISCOUNT_FEE.getValue(), glAccountData);
+                case DEFERRED_INCOME_LIABILITY ->
+                    accountMappingDetails.put(LoanProductAccountingDataParams.DEFERRED_INCOME_LIABILITY.getValue(), glAccountData);
                 case INCOME_FROM_FEES ->
                     accountMappingDetails.put(LoanProductAccountingDataParams.INCOME_FROM_FEES.getValue(), glAccountData);
                 case INCOME_FROM_PENALTIES ->

@@ -426,7 +426,8 @@ public class WorkingCapitalStepDef extends AbstractStepDef {
             assertions.assertThat(product.getAccountingMappings()).containsKey("fundSourceAccount");
             assertions.assertThat(product.getAccountingMappings()).containsKey("loanPortfolioAccount");
             assertions.assertThat(product.getAccountingMappings()).containsKey("transfersInSuspenseAccount");
-            assertions.assertThat(product.getAccountingMappings()).containsKey("interestOnLoanAccount");
+            assertions.assertThat(product.getAccountingMappings()).containsKey("deferredIncomeLiabilityAccount");
+            assertions.assertThat(product.getAccountingMappings()).containsKey("incomeFromDiscountFeeAccount");
             assertions.assertThat(product.getAccountingMappings()).containsKey("incomeFromFeeAccount");
             assertions.assertThat(product.getAccountingMappings()).containsKey("incomeFromPenaltyAccount");
             assertions.assertThat(product.getAccountingMappings()).containsKey("incomeFromRecoveryAccount");
@@ -465,7 +466,8 @@ public class WorkingCapitalStepDef extends AbstractStepDef {
                 .fundSourceAccountId(cashRequest.getFundSourceAccountId())//
                 .loanPortfolioAccountId(cashRequest.getLoanPortfolioAccountId())//
                 .transfersInSuspenseAccountId(cashRequest.getTransfersInSuspenseAccountId())//
-                .interestOnLoanAccountId(cashRequest.getInterestOnLoanAccountId())//
+                .deferredIncomeLiabilityAccountId(cashRequest.getDeferredIncomeLiabilityAccountId())//
+                .incomeFromDiscountFeeAccountId(cashRequest.getIncomeFromDiscountFeeAccountId())//
                 .incomeFromFeeAccountId(cashRequest.getIncomeFromFeeAccountId())//
                 .incomeFromPenaltyAccountId(cashRequest.getIncomeFromPenaltyAccountId())//
                 .incomeFromRecoveryAccountId(cashRequest.getIncomeFromRecoveryAccountId())//
@@ -628,7 +630,8 @@ public class WorkingCapitalStepDef extends AbstractStepDef {
                 .fundSourceAccountId(originalRequest.getFundSourceAccountId())//
                 .loanPortfolioAccountId(originalRequest.getLoanPortfolioAccountId())//
                 .transfersInSuspenseAccountId(originalRequest.getTransfersInSuspenseAccountId())//
-                .interestOnLoanAccountId(originalRequest.getInterestOnLoanAccountId())//
+                .deferredIncomeLiabilityAccountId(originalRequest.getDeferredIncomeLiabilityAccountId())//
+                .incomeFromDiscountFeeAccountId(originalRequest.getIncomeFromDiscountFeeAccountId())//
                 .incomeFromFeeAccountId(originalRequest.getIncomeFromFeeAccountId())//
                 .incomeFromPenaltyAccountId(originalRequest.getIncomeFromPenaltyAccountId())//
                 .incomeFromRecoveryAccountId(originalRequest.getIncomeFromRecoveryAccountId())//

@@ -73,7 +73,8 @@ public final class WorkingCapitalLoanProductConstants {
     public static final String fundSourceAccountIdParamName = "fundSourceAccountId";
     public static final String loanPortfolioAccountIdParamName = "loanPortfolioAccountId";
     public static final String transfersInSuspenseAccountIdParamName = "transfersInSuspenseAccountId";
-    public static final String interestOnLoanAccountIdParamName = "interestOnLoanAccountId";
+    public static final String deferredIncomeLiabilityAccountIdParamName = "deferredIncomeLiabilityAccountId";
+    public static final String incomeFromDiscountFeeAccountIdParamName = "incomeFromDiscountFeeAccountId";
     public static final String incomeFromFeeAccountIdParamName = "incomeFromFeeAccountId";
     public static final String incomeFromPenaltyAccountIdParamName = "incomeFromPenaltyAccountId";
     public static final String incomeFromRecoveryAccountIdParamName = "incomeFromRecoveryAccountId";

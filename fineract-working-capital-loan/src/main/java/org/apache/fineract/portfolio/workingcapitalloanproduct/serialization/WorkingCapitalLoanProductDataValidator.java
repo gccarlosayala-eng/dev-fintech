@@ -101,7 +101,8 @@ public class WorkingCapitalLoanProductDataValidator {
                     WorkingCapitalLoanProductConstants.fundSourceAccountIdParamName, //
                     WorkingCapitalLoanProductConstants.loanPortfolioAccountIdParamName, //
                     WorkingCapitalLoanProductConstants.transfersInSuspenseAccountIdParamName, //
-                    WorkingCapitalLoanProductConstants.interestOnLoanAccountIdParamName, //
+                    WorkingCapitalLoanProductConstants.deferredIncomeLiabilityAccountIdParamName, //
+                    WorkingCapitalLoanProductConstants.incomeFromDiscountFeeAccountIdParamName, //
                     WorkingCapitalLoanProductConstants.incomeFromFeeAccountIdParamName, //
                     WorkingCapitalLoanProductConstants.incomeFromPenaltyAccountIdParamName, //
                     WorkingCapitalLoanProductConstants.incomeFromRecoveryAccountIdParamName, //
@@ -576,10 +577,15 @@ public class WorkingCapitalLoanProductDataValidator {
                 baseDataValidator.reset().parameter(WorkingCapitalLoanProductConstants.transfersInSuspenseAccountIdParamName)
                         .value(transfersInSuspenseAccountId).notNull().integerGreaterThanZero();
 
-                final Long interestOnLoanAccountId = this.fromApiJsonHelper
-                        .extractLongNamed(WorkingCapitalLoanProductConstants.interestOnLoanAccountIdParamName, element);
-                baseDataValidator.reset().parameter(WorkingCapitalLoanProductConstants.interestOnLoanAccountIdParamName)
-                        .value(interestOnLoanAccountId).notNull().integerGreaterThanZero();
+                final Long deferredIncomeLiabilityAccountId = this.fromApiJsonHelper
+                        .extractLongNamed(WorkingCapitalLoanProductConstants.deferredIncomeLiabilityAccountIdParamName, element);
+                baseDataValidator.reset().parameter(WorkingCapitalLoanProductConstants.deferredIncomeLiabilityAccountIdParamName)
+                        .value(deferredIncomeLiabilityAccountId).notNull().integerGreaterThanZero();
+
+                final Long incomeFromDiscountFeeAccountId = this.fromApiJsonHelper
+                        .extractLongNamed(WorkingCapitalLoanProductConstants.incomeFromDiscountFeeAccountIdParamName, element);
+                baseDataValidator.reset().parameter(WorkingCapitalLoanProductConstants.incomeFromDiscountFeeAccountIdParamName)
+                        .value(incomeFromDiscountFeeAccountId).notNull().integerGreaterThanZero();
 
                 final Long incomeFromFeeAccountId = this.fromApiJsonHelper
                         .extractLongNamed(WorkingCapitalLoanProductConstants.incomeFromFeeAccountIdParamName, element);

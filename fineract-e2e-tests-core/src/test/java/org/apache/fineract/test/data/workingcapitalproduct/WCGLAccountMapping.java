@@ -30,8 +30,10 @@ public record WCGLAccountMapping(String responseKey, boolean required, Function<
             PostWorkingCapitalLoanProductsRequest::getLoanPortfolioAccountId);
     public static final WCGLAccountMapping TRANSFERS_IN_SUSPENSE = new WCGLAccountMapping("transfersInSuspenseAccount", true,
             PostWorkingCapitalLoanProductsRequest::getTransfersInSuspenseAccountId);
-    public static final WCGLAccountMapping INTEREST_ON_LOAN = new WCGLAccountMapping("interestOnLoanAccount", true,
-            PostWorkingCapitalLoanProductsRequest::getInterestOnLoanAccountId);
+    public static final WCGLAccountMapping DEFERRED_INCOME_LIABILITY = new WCGLAccountMapping("deferredIncomeLiabilityAccount", true,
+            PostWorkingCapitalLoanProductsRequest::getDeferredIncomeLiabilityAccountId);
+    public static final WCGLAccountMapping INCOME_FROM_DISCOUNT_FEE = new WCGLAccountMapping("incomeFromDiscountFeeAccount", true,
+            PostWorkingCapitalLoanProductsRequest::getIncomeFromDiscountFeeAccountId);
     public static final WCGLAccountMapping INCOME_FROM_FEE = new WCGLAccountMapping("incomeFromFeeAccount", true,
             PostWorkingCapitalLoanProductsRequest::getIncomeFromFeeAccountId);
     public static final WCGLAccountMapping INCOME_FROM_PENALTY = new WCGLAccountMapping("incomeFromPenaltyAccount", true,
@@ -63,11 +65,11 @@ public record WCGLAccountMapping(String responseKey, boolean required, Function<
             "incomeFromGoodwillCreditPenaltyAccount", false,
             PostWorkingCapitalLoanProductsRequest::getIncomeFromGoodwillCreditPenaltyAccountId);
 
-    private static final List<WCGLAccountMapping> VALUES = List.of(FUND_SOURCE, LOAN_PORTFOLIO, TRANSFERS_IN_SUSPENSE, INTEREST_ON_LOAN,
-            INCOME_FROM_FEE, INCOME_FROM_PENALTY, INCOME_FROM_RECOVERY, WRITE_OFF, OVERPAYMENT_LIABILITY, GOODWILL_CREDIT,
-            CHARGE_OFF_EXPENSE, CHARGE_OFF_FRAUD_EXPENSE, INCOME_FROM_CHARGE_OFF_INTEREST, INCOME_FROM_CHARGE_OFF_FEES,
-            INCOME_FROM_CHARGE_OFF_PENALTY, INCOME_FROM_GOODWILL_CREDIT_INTEREST, INCOME_FROM_GOODWILL_CREDIT_FEES,
-            INCOME_FROM_GOODWILL_CREDIT_PENALTY);
+    private static final List<WCGLAccountMapping> VALUES = List.of(FUND_SOURCE, LOAN_PORTFOLIO, TRANSFERS_IN_SUSPENSE,
+            DEFERRED_INCOME_LIABILITY, INCOME_FROM_DISCOUNT_FEE, INCOME_FROM_FEE, INCOME_FROM_PENALTY, INCOME_FROM_RECOVERY, WRITE_OFF,
+            OVERPAYMENT_LIABILITY, GOODWILL_CREDIT, CHARGE_OFF_EXPENSE, CHARGE_OFF_FRAUD_EXPENSE, INCOME_FROM_CHARGE_OFF_INTEREST,
+            INCOME_FROM_CHARGE_OFF_FEES, INCOME_FROM_CHARGE_OFF_PENALTY, INCOME_FROM_GOODWILL_CREDIT_INTEREST,
+            INCOME_FROM_GOODWILL_CREDIT_FEES, INCOME_FROM_GOODWILL_CREDIT_PENALTY);
 
     public static List<WCGLAccountMapping> all() {
         return VALUES;

@@ -59,8 +59,8 @@ public class WorkingCapitalLoanProductToGLAccountMappingHelper {
                 CashAccountsForLoan.TRANSFERS_SUSPENSE.getValue(), GLAccountType.ASSET);
 
         // income (required)
-        saveAccountMapping(element, LoanProductAccountingParams.INTEREST_ON_LOANS.getValue(), productId,
-                CashAccountsForLoan.INTEREST_ON_LOANS.getValue(), GLAccountType.INCOME);
+        saveAccountMapping(element, LoanProductAccountingParams.INCOME_FROM_DISCOUNT_FEE.getValue(), productId,
+                CashAccountsForLoan.INCOME_FROM_DISCOUNT_FEE.getValue(), GLAccountType.INCOME);
         saveAccountMapping(element, LoanProductAccountingParams.INCOME_FROM_FEES.getValue(), productId,
                 CashAccountsForLoan.INCOME_FROM_FEES.getValue(), GLAccountType.INCOME);
         saveAccountMapping(element, LoanProductAccountingParams.INCOME_FROM_PENALTIES.getValue(), productId,
@@ -97,6 +97,8 @@ public class WorkingCapitalLoanProductToGLAccountMappingHelper {
         // liabilities
         saveAccountMapping(element, LoanProductAccountingParams.OVERPAYMENT.getValue(), productId,
                 CashAccountsForLoan.OVERPAYMENT.getValue(), GLAccountType.LIABILITY);
+        saveAccountMapping(element, LoanProductAccountingParams.DEFERRED_INCOME_LIABILITY.getValue(), productId,
+                CashAccountsForLoan.DEFERRED_INCOME_LIABILITY.getValue(), GLAccountType.LIABILITY);
     }
 
     public void handleChangesToCashBasedAccountMapping(final Long productId, final Map<String, Object> changes, final JsonElement element) {
@@ -111,8 +113,8 @@ public class WorkingCapitalLoanProductToGLAccountMappingHelper {
                 CashAccountsForLoan.TRANSFERS_SUSPENSE.getValue(), changes, GLAccountType.ASSET);
 
         // income
-        mergeAccountMappingChanges(element, LoanProductAccountingParams.INTEREST_ON_LOANS.getValue(), productId,
-                CashAccountsForLoan.INTEREST_ON_LOANS.getValue(), changes, GLAccountType.INCOME);
+        mergeAccountMappingChanges(element, LoanProductAccountingParams.INCOME_FROM_DISCOUNT_FEE.getValue(), productId,
+                CashAccountsForLoan.INCOME_FROM_DISCOUNT_FEE.getValue(), changes, GLAccountType.INCOME);
         mergeAccountMappingChanges(element, LoanProductAccountingParams.INCOME_FROM_FEES.getValue(), productId,
                 CashAccountsForLoan.INCOME_FROM_FEES.getValue(), changes, GLAccountType.INCOME);
         mergeAccountMappingChanges(element, LoanProductAccountingParams.INCOME_FROM_PENALTIES.getValue(), productId,
@@ -145,6 +147,8 @@ public class WorkingCapitalLoanProductToGLAccountMappingHelper {
         // liabilities
         mergeAccountMappingChanges(element, LoanProductAccountingParams.OVERPAYMENT.getValue(), productId,
                 CashAccountsForLoan.OVERPAYMENT.getValue(), changes, GLAccountType.LIABILITY);
+        mergeAccountMappingChanges(element, LoanProductAccountingParams.DEFERRED_INCOME_LIABILITY.getValue(), productId,
+                CashAccountsForLoan.DEFERRED_INCOME_LIABILITY.getValue(), changes, GLAccountType.LIABILITY);
     }
 
     public Map<String, Object> populateChangesForNewCashBasedMappingCreation(final JsonElement element) {
@@ -153,12 +157,13 @@ public class WorkingCapitalLoanProductToGLAccountMappingHelper {
         putChange(changes, element, LoanProductAccountingParams.FUND_SOURCE);
         putChange(changes, element, LoanProductAccountingParams.LOAN_PORTFOLIO);
         putChange(changes, element, LoanProductAccountingParams.TRANSFERS_SUSPENSE);
-        putChange(changes, element, LoanProductAccountingParams.INTEREST_ON_LOANS);
+        putChange(changes, element, LoanProductAccountingParams.INCOME_FROM_DISCOUNT_FEE);
         putChange(changes, element, LoanProductAccountingParams.INCOME_FROM_FEES);
         putChange(changes, element, LoanProductAccountingParams.INCOME_FROM_PENALTIES);
         putChange(changes, element, LoanProductAccountingParams.INCOME_FROM_RECOVERY);
         putChange(changes, element, LoanProductAccountingParams.LOSSES_WRITTEN_OFF);
         putChange(changes, element, LoanProductAccountingParams.OVERPAYMENT);
+        putChange(changes, element, LoanProductAccountingParams.DEFERRED_INCOME_LIABILITY);
         // optional accounts
         putChangeIfPresent(changes, element, LoanProductAccountingParams.INCOME_FROM_CHARGE_OFF_INTEREST);
         putChangeIfPresent(changes, element, LoanProductAccountingParams.INCOME_FROM_CHARGE_OFF_FEES);

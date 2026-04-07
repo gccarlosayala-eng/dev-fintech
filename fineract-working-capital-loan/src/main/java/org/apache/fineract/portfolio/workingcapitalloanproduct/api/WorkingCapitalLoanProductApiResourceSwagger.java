@@ -115,7 +115,9 @@ public final class WorkingCapitalLoanProductApiResourceSwagger {
         @Schema(example = "3")
         public Long transfersInSuspenseAccountId;
         @Schema(example = "4")
-        public Long interestOnLoanAccountId;
+        public Long deferredIncomeLiabilityAccountId;
+        @Schema(example = "5")
+        public Long incomeFromDiscountFeeAccountId;
         @Schema(example = "5")
         public Long incomeFromFeeAccountId;
         @Schema(example = "6")
@@ -513,7 +515,9 @@ public final class WorkingCapitalLoanProductApiResourceSwagger {
         @Schema(example = "3")
         public Long transfersInSuspenseAccountId;
         @Schema(example = "4")
-        public Long interestOnLoanAccountId;
+        public Long deferredIncomeLiabilityAccountId;
+        @Schema(example = "5")
+        public Long incomeFromDiscountFeeAccountId;
         @Schema(example = "5")
         public Long incomeFromFeeAccountId;
         @Schema(example = "6")

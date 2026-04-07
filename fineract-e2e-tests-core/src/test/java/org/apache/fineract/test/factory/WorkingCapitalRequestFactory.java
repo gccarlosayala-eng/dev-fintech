@@ -76,7 +76,8 @@ public class WorkingCapitalRequestFactory {
                 .fundSourceAccountId(accountTypeResolver.resolve(DefaultAccountType.SUSPENSE_CLEARING_ACCOUNT))//
                 .loanPortfolioAccountId(accountTypeResolver.resolve(DefaultAccountType.LOANS_RECEIVABLE))//
                 .transfersInSuspenseAccountId(accountTypeResolver.resolve(DefaultAccountType.TRANSFER_IN_SUSPENSE_ACCOUNT))//
-                .interestOnLoanAccountId(accountTypeResolver.resolve(DefaultAccountType.INTEREST_INCOME))//
+                .deferredIncomeLiabilityAccountId(accountTypeResolver.resolve(DefaultAccountType.DEFERRED_CAPITALIZED_INCOME))//
+                .incomeFromDiscountFeeAccountId(accountTypeResolver.resolve(DefaultAccountType.INTEREST_INCOME))//
                 .incomeFromFeeAccountId(accountTypeResolver.resolve(DefaultAccountType.FEE_INCOME))//
                 .incomeFromPenaltyAccountId(accountTypeResolver.resolve(DefaultAccountType.FEE_INCOME))//
                 .incomeFromRecoveryAccountId(accountTypeResolver.resolve(DefaultAccountType.RECOVERIES))//
