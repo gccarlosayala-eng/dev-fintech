@@ -752,6 +752,13 @@ public class WorkingCapitalLoanAccountStepDef extends AbstractStepDef {
                 .contains(ErrorMessageHelper.disburseNotApprovedFailure(SUBMITTED_AND_PENDING_APPROVAL.name()));
     }
 
+    @Then("Admin fails to disburse the Working Capital loan on {string} with {string} EUR transaction amount because of loan status {string} with status code {int}")
+    public void disburseWCLoanFailureDueToStatus(String actualDisbursementDate, String transactionAmount, String loanStatus,
+            int statusCode) {
+        disburseWCLoanFailure(actualDisbursementDate, transactionAmount, statusCode,
+                ErrorMessageHelper.disburseNotApprovedFailure(loanStatus));
+    }
+
     @Then("Admin fails to disburse the Working Capital loan on {string} with {string} EUR transaction amount with invalid data outcomes with error message {string}")
     public void disburseWCLoanFailureWithInvalidData(String actualDisbursementDate, String transactionAmount,
             String errorMessageDescription) {
@@ -939,6 +946,15 @@ public class WorkingCapitalLoanAccountStepDef extends AbstractStepDef {
                         : new Utils.DoubleFormatter(response.getPeriodPaymentRate().doubleValue()).format());
                 case "discount" -> actualValues.add(
                         response.getDiscount() == null ? "null" : new Utils.DoubleFormatter(response.getDiscount().doubleValue()).format());
+                case "totalPaidPrincipal" ->
+                    actualValues.add(response.getBalance() == null || response.getBalance().getTotalPaidPrincipal() == null ? null
+                            : new Utils.DoubleFormatter(response.getBalance().getTotalPaidPrincipal().doubleValue()).format());
+                case "realizedIncome" ->
+                    actualValues.add(response.getBalance() == null || response.getBalance().getRealizedIncome() == null ? null
+                            : new Utils.DoubleFormatter(response.getBalance().getRealizedIncome().doubleValue()).format());
+                case "unrealizedIncome" ->
+                    actualValues.add(response.getBalance() == null || response.getBalance().getUnrealizedIncome() == null ? null
+                            : new Utils.DoubleFormatter(response.getBalance().getUnrealizedIncome().doubleValue()).format());
                 default -> throw new IllegalStateException(String.format("Header name %s cannot be found", headerName));
             }
         }
