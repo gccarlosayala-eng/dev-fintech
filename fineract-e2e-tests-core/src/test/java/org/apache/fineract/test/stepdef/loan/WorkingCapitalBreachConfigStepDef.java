@@ -213,6 +213,9 @@ public class WorkingCapitalBreachConfigStepDef extends AbstractStepDef {
         final Integer intValue = fieldValue != null && "breachFrequency".equals(fieldName) ? Integer.valueOf(fieldValue) : null;
         final BigDecimal decimalValue = fieldValue != null && "breachAmount".equals(fieldName) ? new BigDecimal(fieldValue) : null;
         switch (fieldName) {
+            case "name":
+                request.setName(fieldValue);
+            break;
             case "breachFrequency":
                 request.setBreachFrequency(intValue);
             break;
@@ -233,6 +236,7 @@ public class WorkingCapitalBreachConfigStepDef extends AbstractStepDef {
 
     private void checkBreachData(final WorkingCapitalBreachRequest request, final WorkingCapitalBreachData response) {
         final SoftAssertions assertions = new SoftAssertions();
+        assertions.assertThat(response.getName()).isEqualTo(request.getName());
         assertions.assertThat(response.getBreachFrequency()).isEqualTo(request.getBreachFrequency());
         assertions.assertThat(enumId(response.getBreachFrequencyType())).isEqualTo(request.getBreachFrequencyType());
         assertions.assertThat(enumId(response.getBreachAmountCalculationType())).isEqualTo(request.getBreachAmountCalculationType());

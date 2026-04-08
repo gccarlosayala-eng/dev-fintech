@@ -17,6 +17,7 @@ Feature: Working Capital Breach Configuration
 
     Examples:
       | wcb_field_name_invalid       | wcb_field_value_invalid | wcb_error_message                                                                 |
+      | name                         | "null"                  | The parameter `name` is mandatory.                                                |
       | breachFrequency              | "null"                  | The parameter `breachFrequency` is mandatory.                                     |
       | breachFrequency              | "0"                     | The parameter `breachFrequency` must be greater than 0.                           |
       | breachFrequencyType          | "null"                  | The parameter `breachFrequencyType` is mandatory.                                 |
@@ -32,6 +33,7 @@ Feature: Working Capital Breach Configuration
 
     Examples:
       | wcb_field_name_invalid       | wcb_field_value_invalid | wcb_error_message                                                                 |
+      | name                         | "null"                  | The parameter `name` is mandatory.                                                |
       | breachFrequency              | "0"                     | The parameter `breachFrequency` must be greater than 0.                           |
       | breachFrequencyType          | "INVALID"               | The parameter `breachFrequencyType` must be one of [ DAYS, MONTHS, YEARS ] .      |
       | breachAmountCalculationType  | "INVALID"               | The parameter `breachAmountCalculationType` must be one of [ PERCENTAGE, FLAT ] . |
