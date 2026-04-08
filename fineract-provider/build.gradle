@@ -38,7 +38,6 @@ swaggerBrake {
     strictValidation = false
 }
 
-checkBreakingChanges.dependsOn resolve
 checkBreakingChanges.onlyIf {
     def baseline = findProperty('apiBaseline') ?: "${projectDir}/config/swagger/fineract-baseline.json"
     def exists = file(baseline).exists()
