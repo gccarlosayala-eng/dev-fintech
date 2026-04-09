@@ -777,6 +777,29 @@ public class WorkingCapitalLoanDisbursementTest {
     }
 
     @Test
+    public void testDisburseWithDiscountFailsWhenProductDisallowsDiscountOverride() {
+        final Long productId = createProduct();
+
+        final BigDecimal approvedPrincipal = BigDecimal.valueOf(5000);
+        final Long loanId = submitAndTrack(new WorkingCapitalLoanApplicationTestBuilder() //
+                .withClientId(createdClientId) //
+                .withProductId(productId) //
+                .withPrincipal(approvedPrincipal) //
+                .withPeriodPaymentRate(BigDecimal.ONE) //
+                .buildSubmitJson());
+
+        applicationHelper.approveById(loanId,
+                WorkingCapitalLoanApplicationTestBuilder.buildApproveJson(LocalDate.now(ZoneId.systemDefault()), approvedPrincipal, null));
+
+        final String disburseJson = WorkingCapitalLoanDisbursementTestBuilder.buildDisburseJson(LocalDate.now(ZoneId.systemDefault()),
+                approvedPrincipal, BigDecimal.valueOf(10), null, null, null, null, null, null, null);
+        final CallFailedRuntimeException ex = applicationHelper.runDisburseExpectingFailure(loanId, disburseJson);
+        assertEquals(400, ex.getStatus());
+        assertNotNull(ex.getDeveloperMessage());
+        assertTrue(ex.getDeveloperMessage().contains("override.not.allowed.by.product"));
+    }
+
+    @Test
     public void testDisburseWithDuplicateTransactionExternalId() {
         final Long productId = createProduct();
 

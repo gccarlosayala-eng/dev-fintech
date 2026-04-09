@@ -143,6 +143,10 @@ public class WorkingCapitalLoanDataValidator {
 
         // discountAmount must be >= 0 and <= current (creation-time) discount
         if (this.fromApiJsonHelper.parameterExists(WorkingCapitalLoanConstants.discountAmountParamName, element)) {
+            if (isDiscountOverrideAllowed(loan)) {
+                baseDataValidator.reset().parameter(WorkingCapitalLoanConstants.discountAmountParamName)
+                        .failWithCode("override.not.allowed.by.product");
+            }
             final BigDecimal discountAmount = this.fromApiJsonHelper
                     .extractBigDecimalNamed(WorkingCapitalLoanConstants.discountAmountParamName, element, new HashSet<>());
             baseDataValidator.reset().parameter(WorkingCapitalLoanConstants.discountAmountParamName).value(discountAmount).ignoreIfNull()
@@ -268,6 +272,10 @@ public class WorkingCapitalLoanDataValidator {
         }
 
         if (this.fromApiJsonHelper.parameterExists(WorkingCapitalLoanConstants.discountAmountParamName, element)) {
+            if (isDiscountOverrideAllowed(loan)) {
+                baseDataValidator.reset().parameter(WorkingCapitalLoanConstants.discountAmountParamName)
+                        .failWithCode("override.not.allowed.by.product");
+            }
             final BigDecimal discountAmount = this.fromApiJsonHelper
                     .extractBigDecimalNamed(WorkingCapitalLoanConstants.discountAmountParamName, element, new HashSet<>());
             baseDataValidator.reset().parameter(WorkingCapitalLoanConstants.discountAmountParamName).value(discountAmount).ignoreIfNull()
@@ -366,9 +374,7 @@ public class WorkingCapitalLoanDataValidator {
                 .resource(WorkingCapitalLoanConstants.RESOURCE_NAME);
         final JsonElement element = this.fromApiJsonHelper.parse(json);
 
-        final boolean discountOverrideAllowed = loan.getLoanProduct() != null && loan.getLoanProduct().getConfigurableAttributes() != null
-                && loan.getLoanProduct().getConfigurableAttributes().isDiscountDefault();
-        if (!discountOverrideAllowed) {
+        if (isDiscountOverrideAllowed(loan)) {
             baseDataValidator.reset().parameter(WorkingCapitalLoanConstants.discountAmountParamName)
                     .failWithCode("override.not.allowed.by.product");
         }
@@ -409,5 +415,10 @@ public class WorkingCapitalLoanDataValidator {
         if (!dataValidationErrors.isEmpty()) {
             throw new PlatformApiDataValidationException(dataValidationErrors);
         }
+    }
+
+    private boolean isDiscountOverrideAllowed(final WorkingCapitalLoan loan) {
+        return loan.getLoanProduct() == null || loan.getLoanProduct().getConfigurableAttributes() == null
+                || !loan.getLoanProduct().getConfigurableAttributes().isDiscountDefault();
     }
 }
