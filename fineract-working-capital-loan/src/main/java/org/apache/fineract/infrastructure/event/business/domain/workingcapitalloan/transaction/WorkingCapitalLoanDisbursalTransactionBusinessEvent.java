@@ -16,20 +16,24 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.portfolio.workingcapitalloan.service;
+package org.apache.fineract.infrastructure.event.business.domain.workingcapitalloan.transaction;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import org.apache.fineract.portfolio.workingcapitalloan.data.ProjectedAmortizationScheduleGenerateRequest;
-import org.apache.fineract.portfolio.workingcapitalloan.domain.WorkingCapitalLoan;
+import org.apache.fineract.portfolio.workingcapitalloan.domain.WorkingCapitalLoanTransaction;
 
-public interface WorkingCapitalLoanAmortizationScheduleWriteService {
+public class WorkingCapitalLoanDisbursalTransactionBusinessEvent extends WorkingCapitalLoanTransactionBusinessEvent {
 
-    void generateAndSaveAmortizationSchedule(Long loanId, ProjectedAmortizationScheduleGenerateRequest request);
+    private static final String TYPE = "WorkingCapitalLoanDisbursalTransactionBusinessEvent";
 
-    void generateAndSaveAmortizationScheduleOnDisbursement(WorkingCapitalLoan loan, BigDecimal disbursedAmount, LocalDate disbursementDate);
+    public WorkingCapitalLoanDisbursalTransactionBusinessEvent(final WorkingCapitalLoanTransaction value) {
+        super(value);
+    }
 
-    void generateAndSaveAmortizationScheduleOnApproval(WorkingCapitalLoan loan);
+    public WorkingCapitalLoanDisbursalTransactionBusinessEvent(final WorkingCapitalLoanTransaction value, final Long aggregateRootId) {
+        super(value, aggregateRootId);
+    }
 
-    void regenerateAmortizationScheduleOnUndoDisbursal(WorkingCapitalLoan loan);
+    @Override
+    public String getType() {
+        return TYPE;
+    }
 }

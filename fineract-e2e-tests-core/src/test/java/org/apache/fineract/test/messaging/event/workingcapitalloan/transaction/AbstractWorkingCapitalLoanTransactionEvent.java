@@ -16,20 +16,21 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.portfolio.workingcapitalloan.service;
+package org.apache.fineract.test.messaging.event.workingcapitalloan.transaction;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import org.apache.fineract.portfolio.workingcapitalloan.data.ProjectedAmortizationScheduleGenerateRequest;
-import org.apache.fineract.portfolio.workingcapitalloan.domain.WorkingCapitalLoan;
+import java.util.function.Function;
+import org.apache.fineract.avro.workingcapitalloan.v1.WorkingCapitalLoanTransactionDataV1;
+import org.apache.fineract.test.messaging.event.Event;
 
-public interface WorkingCapitalLoanAmortizationScheduleWriteService {
+public abstract class AbstractWorkingCapitalLoanTransactionEvent implements Event<WorkingCapitalLoanTransactionDataV1> {
 
-    void generateAndSaveAmortizationSchedule(Long loanId, ProjectedAmortizationScheduleGenerateRequest request);
+    @Override
+    public Class<WorkingCapitalLoanTransactionDataV1> getDataClass() {
+        return WorkingCapitalLoanTransactionDataV1.class;
+    }
 
-    void generateAndSaveAmortizationScheduleOnDisbursement(WorkingCapitalLoan loan, BigDecimal disbursedAmount, LocalDate disbursementDate);
-
-    void generateAndSaveAmortizationScheduleOnApproval(WorkingCapitalLoan loan);
-
-    void regenerateAmortizationScheduleOnUndoDisbursal(WorkingCapitalLoan loan);
+    @Override
+    public Function<WorkingCapitalLoanTransactionDataV1, Long> getIdExtractor() {
+        return WorkingCapitalLoanTransactionDataV1::getId;
+    }
 }

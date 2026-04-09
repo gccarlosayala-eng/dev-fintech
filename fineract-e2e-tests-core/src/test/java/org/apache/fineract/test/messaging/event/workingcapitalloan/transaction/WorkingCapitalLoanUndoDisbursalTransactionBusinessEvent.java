@@ -16,20 +16,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.portfolio.workingcapitalloan.service;
+package org.apache.fineract.test.messaging.event.workingcapitalloan.transaction;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import org.apache.fineract.portfolio.workingcapitalloan.data.ProjectedAmortizationScheduleGenerateRequest;
-import org.apache.fineract.portfolio.workingcapitalloan.domain.WorkingCapitalLoan;
+public class WorkingCapitalLoanUndoDisbursalTransactionBusinessEvent extends AbstractWorkingCapitalLoanTransactionEvent {
 
-public interface WorkingCapitalLoanAmortizationScheduleWriteService {
-
-    void generateAndSaveAmortizationSchedule(Long loanId, ProjectedAmortizationScheduleGenerateRequest request);
-
-    void generateAndSaveAmortizationScheduleOnDisbursement(WorkingCapitalLoan loan, BigDecimal disbursedAmount, LocalDate disbursementDate);
-
-    void generateAndSaveAmortizationScheduleOnApproval(WorkingCapitalLoan loan);
-
-    void regenerateAmortizationScheduleOnUndoDisbursal(WorkingCapitalLoan loan);
+    @Override
+    public String getEventName() {
+        return "WorkingCapitalLoanUndoDisbursalTransactionBusinessEvent";
+    }
 }
