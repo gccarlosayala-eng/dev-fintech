@@ -631,7 +631,7 @@ public class GlobalConfigurationHelper {
         HashMap<String, Object> allowCashAndNonCashAccrual = new HashMap<>();
         allowCashAndNonCashAccrual.put("name", GlobalConfigurationConstants.ALLOW_CASH_AND_NON_CASH_ACCRUAL);
         allowCashAndNonCashAccrual.put("value", 0L);
-        allowCashAndNonCashAccrual.put("enabled", false);
+        allowCashAndNonCashAccrual.put("enabled", true);
         allowCashAndNonCashAccrual.put("trapDoor", false);
         defaults.add(allowCashAndNonCashAccrual);
 
