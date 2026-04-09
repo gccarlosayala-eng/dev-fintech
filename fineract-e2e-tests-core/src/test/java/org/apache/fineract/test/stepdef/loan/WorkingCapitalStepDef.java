@@ -724,21 +724,34 @@ public class WorkingCapitalStepDef extends AbstractStepDef {
         assertions.assertAll();
     }
 
-    @When("make Internal Payment {string} on {string}")
+    private Long getWorkingCapitalLoanResourceId() {
+        PostWorkingCapitalLoansResponse response = testContext().get(TestContextKey.LOAN_CREATE_RESPONSE);
+        return response.getResourceId();
+    }
+
+    @When("Admin makes Internal Payment {string} on {string}")
     public void internalPayWCLoan(String amount, String transactionDate) {
-        PostWorkingCapitalLoansResponse workingCapitalLoanProductsResponse = testContext().get(TestContextKey.LOAN_CREATE_RESPONSE);
-        Long resourceId = workingCapitalLoanProductsResponse.getResourceId();
+        Long resourceId = getWorkingCapitalLoanResourceId();
         fineractFeignClient.workingCapitalLoans().payment(resourceId, new InternalWorkingCapitalLoanPaymentRequest()
                 .amount(BigDecimal.valueOf(Double.parseDouble(amount))).transactionDate(LocalDate.parse(transactionDate)));
     }
 
-    @Then("Delinquency Tag History for WC Loan has lines:")
+    @Then("Delinquency Tag History for Working Capital loan has lines:")
     public void checkDelinquencyHistory(final DataTable table) {
-        PostWorkingCapitalLoansResponse workingCapitalLoanProductsResponse = testContext().get(TestContextKey.LOAN_CREATE_RESPONSE);
-        Long resourceId = workingCapitalLoanProductsResponse.getResourceId();
+        Long resourceId = getWorkingCapitalLoanResourceId();
         List<GetWorkingCapitalLoanDelinquencyRangeScheduleTagHistoryResponse> actualLines = ok(
                 () -> fineractFeignClient.workingCapitalLoans().getDelinquencyRangeScheduleTagHistoryById(resourceId));
-        log.info("Loan {}", actualLines);
+
+        // Sort by addedOnDate (descending), then by periodNumber (descending)
+        actualLines.sort((a, b) -> {
+            int dateCompare = b.getAddedOnDate().compareTo(a.getAddedOnDate());
+            if (dateCompare != 0) {
+                return dateCompare;
+            }
+            return b.getPeriodNumber().compareTo(a.getPeriodNumber());
+        });
+
+        log.debug("Sorted Loan Delinquency History: {}", actualLines);
         List<List<String>> rows = table.asLists();
         Assertions.assertEquals(rows.size() - 1, actualLines.size());
         for (int i = 0; i < rows.size() - 1; i++) {
