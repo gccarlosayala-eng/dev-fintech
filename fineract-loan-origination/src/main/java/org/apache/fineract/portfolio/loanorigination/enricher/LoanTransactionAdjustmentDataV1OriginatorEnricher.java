@@ -20,7 +20,8 @@ package org.apache.fineract.portfolio.loanorigination.enricher;
 
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.apache.fineract.avro.loan.v1.LoanChargeDataV1;
+import org.apache.fineract.avro.loan.v1.LoanTransactionAdjustmentDataV1;
+import org.apache.fineract.avro.loan.v1.LoanTransactionDataV1;
 import org.apache.fineract.avro.loan.v1.OriginatorDetailsV1;
 import org.apache.fineract.infrastructure.core.service.DataEnricher;
 import org.apache.fineract.portfolio.loanorigination.helper.LoanOriginatorDetailsResolver;
@@ -30,24 +31,29 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 @ConditionalOnProperty(value = "fineract.module.loan-origination.enabled", havingValue = "true")
-public class LoanChargeDataV1OriginatorEnricher implements DataEnricher<LoanChargeDataV1> {
+public class LoanTransactionAdjustmentDataV1OriginatorEnricher implements DataEnricher<LoanTransactionAdjustmentDataV1> {
 
     private final LoanOriginatorDetailsResolver loanOriginatorDetailsResolver;
 
     @Override
-    public boolean isDataTypeSupported(final Class<LoanChargeDataV1> dataType) {
-        return dataType.isAssignableFrom(LoanChargeDataV1.class);
+    public boolean isDataTypeSupported(final Class<LoanTransactionAdjustmentDataV1> dataType) {
+        return dataType.isAssignableFrom(LoanTransactionAdjustmentDataV1.class);
     }
 
     @Override
-    public void enrich(final LoanChargeDataV1 data) {
-        if (data == null || data.getLoanId() == null) {
+    public void enrich(final LoanTransactionAdjustmentDataV1 data) {
+        final LoanTransactionDataV1 transactionToAdjust = data.getTransactionToAdjust();
+        if (transactionToAdjust == null || transactionToAdjust.getLoanId() == null) {
             return;
         }
 
-        final List<OriginatorDetailsV1> originators = loanOriginatorDetailsResolver.resolveOriginatorDetails(data.getLoanId());
+        final List<OriginatorDetailsV1> originators = loanOriginatorDetailsResolver
+                .resolveOriginatorDetails(transactionToAdjust.getLoanId());
         if (!originators.isEmpty()) {
-            data.setOriginators(originators);
+            transactionToAdjust.setOriginators(originators);
+            if (data.getNewTransactionDetail() != null) {
+                data.getNewTransactionDetail().setOriginators(originators);
+            }
         }
     }
 }

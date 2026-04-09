@@ -29,7 +29,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.Collections;
 import java.util.List;
-import org.apache.fineract.avro.loan.v1.LoanTransactionDataV1;
+import org.apache.fineract.avro.loan.v1.LoanChargeDataV1;
 import org.apache.fineract.avro.loan.v1.OriginatorDetailsV1;
 import org.apache.fineract.portfolio.loanorigination.helper.LoanOriginatorDetailsResolver;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,27 +40,27 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class LoanTransactionDataV1OriginatorEnricherTest {
+class LoanChargeDataV1OriginatorEnricherTest {
 
     @Mock
     private LoanOriginatorDetailsResolver loanOriginatorDetailsResolver;
 
     @InjectMocks
-    private LoanTransactionDataV1OriginatorEnricher enricher;
+    private LoanChargeDataV1OriginatorEnricher enricher;
 
-    private LoanTransactionDataV1 loanTransactionData;
+    private LoanChargeDataV1 loanChargeData;
     private Long loanId;
 
     @BeforeEach
     void setUp() {
         loanId = 1L;
-        loanTransactionData = new LoanTransactionDataV1();
-        loanTransactionData.setLoanId(loanId);
+        loanChargeData = new LoanChargeDataV1();
+        loanChargeData.setLoanId(loanId);
     }
 
     @Test
     void testIsDataTypeSupported() {
-        assertTrue(enricher.isDataTypeSupported(LoanTransactionDataV1.class));
+        assertTrue(enricher.isDataTypeSupported(LoanChargeDataV1.class));
     }
 
     @Test
@@ -70,13 +70,13 @@ class LoanTransactionDataV1OriginatorEnricherTest {
         when(loanOriginatorDetailsResolver.resolveOriginatorDetails(loanId)).thenReturn(List.of(originatorDetails));
 
         // When
-        enricher.enrich(loanTransactionData);
+        enricher.enrich(loanChargeData);
 
         // Then
         verify(loanOriginatorDetailsResolver).resolveOriginatorDetails(loanId);
-        assertNotNull(loanTransactionData.getOriginators());
-        assertEquals(1, loanTransactionData.getOriginators().size());
-        assertEquals("test-originator-1", loanTransactionData.getOriginators().getFirst().getExternalId());
+        assertNotNull(loanChargeData.getOriginators());
+        assertEquals(1, loanChargeData.getOriginators().size());
+        assertEquals("test-originator-1", loanChargeData.getOriginators().getFirst().getExternalId());
     }
 
     @Test
@@ -87,11 +87,11 @@ class LoanTransactionDataV1OriginatorEnricherTest {
         when(loanOriginatorDetailsResolver.resolveOriginatorDetails(loanId)).thenReturn(List.of(details1, details2));
 
         // When
-        enricher.enrich(loanTransactionData);
+        enricher.enrich(loanChargeData);
 
         // Then
-        assertNotNull(loanTransactionData.getOriginators());
-        assertEquals(2, loanTransactionData.getOriginators().size());
+        assertNotNull(loanChargeData.getOriginators());
+        assertEquals(2, loanChargeData.getOriginators().size());
     }
 
     @Test
@@ -100,24 +100,24 @@ class LoanTransactionDataV1OriginatorEnricherTest {
         when(loanOriginatorDetailsResolver.resolveOriginatorDetails(loanId)).thenReturn(Collections.emptyList());
 
         // When
-        enricher.enrich(loanTransactionData);
+        enricher.enrich(loanChargeData);
 
         // Then
         verify(loanOriginatorDetailsResolver).resolveOriginatorDetails(loanId);
-        assertNull(loanTransactionData.getOriginators());
+        assertNull(loanChargeData.getOriginators());
     }
 
     @Test
     void testEnrich_NullLoanId() {
         // Given
-        loanTransactionData.setLoanId(null);
+        loanChargeData.setLoanId(null);
 
         // When
-        enricher.enrich(loanTransactionData);
+        enricher.enrich(loanChargeData);
 
         // Then
         verify(loanOriginatorDetailsResolver, never()).resolveOriginatorDetails(any());
-        assertNull(loanTransactionData.getOriginators());
+        assertNull(loanChargeData.getOriginators());
     }
 
     @Test
