@@ -40,6 +40,7 @@ import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.core.validator.ParseAndValidator;
 import org.apache.fineract.portfolio.delinquency.domain.DelinquencyAction;
 import org.apache.fineract.portfolio.delinquency.domain.DelinquencyFrequencyType;
+import org.apache.fineract.portfolio.delinquency.domain.DelinquencyMinimumPaymentType;
 import org.apache.fineract.portfolio.workingcapitalloan.domain.WorkingCapitalLoan;
 import org.apache.fineract.portfolio.workingcapitalloan.domain.WorkingCapitalLoanDelinquencyAction;
 import org.apache.fineract.portfolio.workingcapitalloan.domain.WorkingCapitalLoanDelinquencyRangeSchedule;
@@ -52,6 +53,7 @@ import org.springframework.stereotype.Component;
 public class WorkingCapitalLoanDelinquencyActionParseAndValidator extends ParseAndValidator {
 
     private static final String MINIMUM_PAYMENT = "minimumPayment";
+    private static final String MINIMUM_PAYMENT_TYPE = "minimumPaymentType";
     private static final String FREQUENCY = "frequency";
     private static final String FREQUENCY_TYPE = "frequencyType";
 
@@ -84,8 +86,20 @@ public class WorkingCapitalLoanDelinquencyActionParseAndValidator extends ParseA
     private void validateReschedule(final WorkingCapitalLoanDelinquencyAction action, final WorkingCapitalLoan workingCapitalLoan) {
         validateLoanIsDisbursed(workingCapitalLoan);
         validateScheduleExists(workingCapitalLoan);
-        validateMinimumPaymentProvided(action);
-        validateFrequencyProvided(action);
+
+        final boolean hasPaymentGroup = action.getMinimumPayment() != null || action.getMinimumPaymentType() != null;
+        final boolean hasFrequencyGroup = action.getFrequency() != null || action.getFrequencyType() != null;
+
+        if (!hasPaymentGroup && !hasFrequencyGroup) {
+            raiseValidationError("wc-loan-delinquency-action-reschedule-no-change",
+                    "At least one of payment (minimumPayment + minimumPaymentType) or frequency (frequency + frequencyType) group must be provided");
+        }
+        if (hasPaymentGroup) {
+            validateMinimumPaymentGroupProvided(action);
+        }
+        if (hasFrequencyGroup) {
+            validateFrequencyGroupProvided(action);
+        }
     }
 
     private WorkingCapitalLoanDelinquencyAction parseCommand(final JsonCommand command) {
@@ -99,6 +113,7 @@ public class WorkingCapitalLoanDelinquencyActionParseAndValidator extends ParseA
         } else if (DelinquencyAction.RESCHEDULE.equals(action.getAction())) {
             action.setStartDate(DateUtils.getBusinessLocalDate());
             action.setMinimumPayment(extractBigDecimal(json, MINIMUM_PAYMENT));
+            action.setMinimumPaymentType(extractMinimumPaymentType(json));
             action.setFrequency(extractInteger(json, FREQUENCY));
             action.setFrequencyType(extractFrequencyType(json));
         }
@@ -140,6 +155,21 @@ public class WorkingCapitalLoanDelinquencyActionParseAndValidator extends ParseA
         return null;
     }
 
+    private DelinquencyMinimumPaymentType extractMinimumPaymentType(final JsonElement json) {
+        final String value = jsonHelper.extractStringNamed(MINIMUM_PAYMENT_TYPE, json);
+        if (StringUtils.isEmpty(value)) {
+            return null;
+        }
+        try {
+            return DelinquencyMinimumPaymentType.valueOf(value.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new PlatformApiDataValidationException(
+                    List.of(ApiParameterError.parameterError("wc-loan-delinquency-action-invalid-minimum-payment-type",
+                            "Invalid minimum payment type: " + value + ". Supported: PERCENTAGE, FLAT", MINIMUM_PAYMENT_TYPE)),
+                    e);
+        }
+    }
+
     private DelinquencyFrequencyType extractFrequencyType(final JsonElement json) {
         final String value = jsonHelper.extractStringNamed(FREQUENCY_TYPE, json);
         if (StringUtils.isEmpty(value)) {
@@ -179,21 +209,25 @@ public class WorkingCapitalLoanDelinquencyActionParseAndValidator extends ParseA
         }
     }
 
-    private void validateMinimumPaymentProvided(final WorkingCapitalLoanDelinquencyAction action) {
+    private void validateMinimumPaymentGroupProvided(final WorkingCapitalLoanDelinquencyAction action) {
         if (action.getMinimumPayment() == null || action.getMinimumPayment().compareTo(BigDecimal.ZERO) <= 0) {
             raiseValidationError("wc-loan-delinquency-action-invalid-minimum-payment",
                     "The parameter `minimumPayment` must be greater than 0", MINIMUM_PAYMENT);
         }
+        if (action.getMinimumPaymentType() == null) {
+            raiseValidationError("wc-loan-delinquency-action-missing-minimum-payment-type",
+                    "The parameter `minimumPaymentType` is mandatory when `minimumPayment` is provided", MINIMUM_PAYMENT_TYPE);
+        }
     }
 
-    private void validateFrequencyProvided(final WorkingCapitalLoanDelinquencyAction action) {
+    private void validateFrequencyGroupProvided(final WorkingCapitalLoanDelinquencyAction action) {
         if (action.getFrequency() == null || action.getFrequency() <= 0) {
             raiseValidationError("wc-loan-delinquency-action-invalid-frequency", "The parameter `frequency` must be greater than 0",
                     FREQUENCY);
         }
         if (action.getFrequencyType() == null) {
             raiseValidationError("wc-loan-delinquency-action-missing-frequency-type",
-                    "The parameter `frequencyType` is mandatory for reschedule action", FREQUENCY_TYPE);
+                    "The parameter `frequencyType` is mandatory when `frequency` is provided", FREQUENCY_TYPE);
         }
     }
 

@@ -196,24 +196,40 @@ public class WorkingCapitalLoanDelinquencyRangeScheduleServiceImpl implements Wo
         if (principal == null) {
             return BigDecimal.ZERO;
         }
+
+        final BigDecimal effectiveMinimumPayment = resolveMinimumPayment(rescheduleOverride, rule);
+        final DelinquencyMinimumPaymentType effectivePaymentType = resolveMinimumPaymentType(rescheduleOverride, rule);
+        if (effectiveMinimumPayment == null) {
+            return BigDecimal.ZERO;
+        }
+
         final BigDecimal rawAmount;
-        if (rescheduleOverride != null) {
-            rawAmount = MathUtil.percentageOf(principal, rescheduleOverride.getMinimumPayment(), MoneyHelper.getMathContext());
+        if (DelinquencyMinimumPaymentType.FLAT.equals(effectivePaymentType)) {
+            rawAmount = effectiveMinimumPayment;
         } else {
-            final BigDecimal minimumPayment = rule.getMinimumPayment();
-            if (minimumPayment == null) {
-                return BigDecimal.ZERO;
-            }
-            if (DelinquencyMinimumPaymentType.FLAT.equals(rule.getMinimumPaymentType())) {
-                rawAmount = minimumPayment;
-            } else {
-                final BigDecimal discount = loan.getLoanProductRelatedDetails() != null ? loan.getLoanProductRelatedDetails().getDiscount()
-                        : null;
-                final BigDecimal base = discount != null ? principal.add(discount) : principal;
-                rawAmount = MathUtil.percentageOf(base, minimumPayment, MoneyHelper.getMathContext());
-            }
+            final BigDecimal discount = loan.getLoanProductRelatedDetails() != null ? loan.getLoanProductRelatedDetails().getDiscount()
+                    : null;
+            final BigDecimal base = discount != null ? principal.add(discount) : principal;
+            rawAmount = MathUtil.percentageOf(base, effectiveMinimumPayment, MoneyHelper.getMathContext());
         }
         return Money.of(loan.getLoanProductRelatedDetails().getCurrency(), rawAmount).getAmount();
+    }
+
+    private BigDecimal resolveMinimumPayment(final WorkingCapitalLoanDelinquencyAction rescheduleOverride,
+            final DelinquencyMinimumPaymentPeriodAndRule rule) {
+        if (rescheduleOverride != null && rescheduleOverride.getMinimumPayment() != null) {
+            return rescheduleOverride.getMinimumPayment();
+        }
+        return rule != null ? rule.getMinimumPayment() : null;
+    }
+
+    private DelinquencyMinimumPaymentType resolveMinimumPaymentType(final WorkingCapitalLoanDelinquencyAction rescheduleOverride,
+            final DelinquencyMinimumPaymentPeriodAndRule rule) {
+        if (rescheduleOverride != null && rescheduleOverride.getMinimumPaymentType() != null) {
+            return rescheduleOverride.getMinimumPaymentType();
+        }
+        return rule != null && rule.getMinimumPaymentType() != null ? rule.getMinimumPaymentType()
+                : DelinquencyMinimumPaymentType.PERCENTAGE;
     }
 
     private Optional<WorkingCapitalLoanDelinquencyAction> findLatestRescheduleAction(final Long loanId) {
@@ -223,9 +239,15 @@ public class WorkingCapitalLoanDelinquencyRangeScheduleServiceImpl implements Wo
     @Override
     public void rescheduleMinimumPayment(final WorkingCapitalLoan loan, final WorkingCapitalLoanDelinquencyAction rescheduleAction) {
         final LocalDate businessDate = DateUtils.getBusinessLocalDate();
-        final BigDecimal newExpectedAmount = calculateExpectedAmount(loan, null, rescheduleAction);
-        final Integer newFrequency = rescheduleAction.getFrequency();
-        final DelinquencyFrequencyType newFreqType = rescheduleAction.getFrequencyType();
+        final DelinquencyMinimumPaymentPeriodAndRule rule = getMinimumPaymentRule(loan);
+        if (rule == null) {
+            log.warn("No minimum payment rule found for WC loan {}, skipping reschedule", loan.getId());
+            return;
+        }
+        final BigDecimal newExpectedAmount = calculateExpectedAmount(loan, rule, rescheduleAction);
+        final Integer newFrequency = rescheduleAction.getFrequency() != null ? rescheduleAction.getFrequency() : rule.getFrequency();
+        final DelinquencyFrequencyType newFreqType = rescheduleAction.getFrequencyType() != null ? rescheduleAction.getFrequencyType()
+                : rule.getFrequencyType();
 
         final List<WorkingCapitalLoanDelinquencyRangeSchedule> periods = loanDelinquencyRangeScheduleRepository
                 .findByLoanIdOrderByPeriodNumberAsc(loan.getId());

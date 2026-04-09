@@ -40,7 +40,7 @@ public class WorkingCapitalLoanDelinquencyActionReadServiceImpl implements Worki
 
     private WorkingCapitalLoanDelinquencyActionData toData(final WorkingCapitalLoanDelinquencyAction action) {
         return new WorkingCapitalLoanDelinquencyActionData(action.getId(), action.getAction(), action.getStartDate(), action.getEndDate(),
-                action.getMinimumPayment(), action.getFrequency(), action.getFrequencyType());
+                action.getMinimumPayment(), action.getMinimumPaymentType(), action.getFrequency(), action.getFrequencyType());
     }
 
 }

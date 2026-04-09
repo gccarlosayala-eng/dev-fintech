@@ -34,6 +34,7 @@ import lombok.Setter;
 import org.apache.fineract.infrastructure.core.domain.AbstractAuditableWithUTCDateTimeCustom;
 import org.apache.fineract.portfolio.delinquency.domain.DelinquencyAction;
 import org.apache.fineract.portfolio.delinquency.domain.DelinquencyFrequencyType;
+import org.apache.fineract.portfolio.delinquency.domain.DelinquencyMinimumPaymentType;
 
 @Getter
 @Setter
@@ -58,6 +59,10 @@ public class WorkingCapitalLoanDelinquencyAction extends AbstractAuditableWithUT
 
     @Column(name = "minimum_payment", scale = 6, precision = 19)
     private BigDecimal minimumPayment;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "minimum_payment_type")
+    private DelinquencyMinimumPaymentType minimumPaymentType;
 
     @Column(name = "frequency")
     private Integer frequency;

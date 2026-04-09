@@ -40,6 +40,7 @@
         </preConditions>
         <addColumn tableName="m_wc_loan_delinquency_action">
             <column name="minimum_payment" type="DECIMAL(19,6)"/>
+            <column name="minimum_payment_type" type="VARCHAR(50)"/>
             <column name="frequency" type="INT"/>
             <column name="frequency_type" type="VARCHAR(50)"/>
         </addColumn>

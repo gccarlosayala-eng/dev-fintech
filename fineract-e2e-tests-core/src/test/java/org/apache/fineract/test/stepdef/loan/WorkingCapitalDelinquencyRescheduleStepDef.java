@@ -96,31 +96,75 @@ public class WorkingCapitalDelinquencyRescheduleStepDef extends AbstractStepDef 
                 frequencyType, minimumPayment, minimumPaymentType);
     }
 
-    @When("Admin creates WC delinquency reschedule action with minimumPayment {int} and frequency {int} {word}")
-    public void createRescheduleAction(final int minimumPayment, final int frequency, final String frequencyType) {
-        createRescheduleActionInternal(new BigDecimal(minimumPayment), frequency, frequencyType);
+    @When("Admin creates WC delinquency reschedule action with the following parameters:")
+    public void createRescheduleAction(final DataTable table) {
+        final Map<String, String> params = table.asMaps().get(0);
+        final PostWorkingCapitalLoansDelinquencyActionRequest request = new PostWorkingCapitalLoansDelinquencyActionRequest();
+        request.setAction("reschedule");
+        request.setLocale("en");
+        Optional.ofNullable(params.get("minimumPayment")).ifPresent(v -> request.setMinimumPayment(new BigDecimal(v)));
+        Optional.ofNullable(params.get("minimumPaymentType")).ifPresent(request::setMinimumPaymentType);
+        Optional.ofNullable(params.get("frequency")).ifPresent(v -> request.setFrequency(Integer.parseInt(v)));
+        Optional.ofNullable(params.get("frequencyType")).ifPresent(request::setFrequencyType);
+        executeRescheduleAction(request);
     }
 
-    @Then("Admin fails to create WC delinquency reschedule action with minimumPayment {int} and frequency {int} {word}")
-    public void failToCreateRescheduleAction(final int minimumPayment, final int frequency, final String frequencyType) {
+    @Then("Admin fails to create WC delinquency reschedule action with minimumPayment {int} {word} and frequency {int} {word}")
+    public void failToCreateRescheduleAction(final int minimumPayment, final String minimumPaymentType, final int frequency,
+            final String frequencyType) {
         final Long loanId = getLoanId();
-        final PostWorkingCapitalLoansDelinquencyActionRequest request = buildRescheduleRequest(new BigDecimal(minimumPayment), frequency,
-                frequencyType);
-        log.info("Attempting to create RESCHEDULE action for WC loan {} (expecting failure): minimumPayment={}, frequency={} {}", loanId,
-                minimumPayment, frequency, frequencyType);
+        final PostWorkingCapitalLoansDelinquencyActionRequest request = buildRescheduleRequest(new BigDecimal(minimumPayment),
+                minimumPaymentType, frequency, frequencyType);
+        log.info("Attempting to create RESCHEDULE action for WC loan {} (expecting failure): minimumPayment={} {}, frequency={} {}", loanId,
+                minimumPayment, minimumPaymentType, frequency, frequencyType);
 
         fail(() -> fineractFeignClient.workingCapitalLoanDelinquencyActions().createDelinquencyAction(loanId, request));
     }
 
-    @Then("Admin fails to create WC delinquency reschedule action with minimumPayment {int} and frequency {int} {word} with error containing {string}")
-    public void failToCreateRescheduleActionWithMessage(final int minimumPayment, final int frequency, final String frequencyType,
-            final String expectedMessage) {
+    @Then("Admin fails to create WC delinquency reschedule action with minimumPayment {int} {word} and frequency {int} {word} with error containing {string}")
+    public void failToCreateRescheduleActionWithMessage(final int minimumPayment, final String minimumPaymentType, final int frequency,
+            final String frequencyType, final String expectedMessage) {
         final Long loanId = getLoanId();
-        final PostWorkingCapitalLoansDelinquencyActionRequest request = buildRescheduleRequest(new BigDecimal(minimumPayment), frequency,
-                frequencyType);
+        final PostWorkingCapitalLoansDelinquencyActionRequest request = buildRescheduleRequest(new BigDecimal(minimumPayment),
+                minimumPaymentType, frequency, frequencyType);
         log.info(
-                "Attempting to create RESCHEDULE action for WC loan {} (expecting HTTP 400 and message '{}'): minimumPayment={}, frequency={} {}",
-                loanId, expectedMessage, minimumPayment, frequency, frequencyType);
+                "Attempting to create RESCHEDULE action for WC loan {} (expecting HTTP 400 and message '{}'): minimumPayment={} {}, frequency={} {}",
+                loanId, expectedMessage, minimumPayment, minimumPaymentType, frequency, frequencyType);
+
+        final CallFailedRuntimeException exception = fail(
+                () -> fineractFeignClient.workingCapitalLoanDelinquencyActions().createDelinquencyAction(loanId, request));
+        assertThat(exception.getStatus()).as("HTTP status code").isEqualTo(400);
+        assertThat(exception.getDeveloperMessage()).as("Developer message").contains(expectedMessage);
+    }
+
+    @Then("Admin fails to create WC delinquency reschedule action with error containing {string} and the following parameters:")
+    public void failToCreateRescheduleActionWithTableAndMessage(final String expectedMessage, final DataTable table) {
+        final Long loanId = getLoanId();
+        final Map<String, String> params = table.asMaps().get(0);
+        final PostWorkingCapitalLoansDelinquencyActionRequest request = new PostWorkingCapitalLoansDelinquencyActionRequest();
+        request.setAction("reschedule");
+        request.setLocale("en");
+        Optional.ofNullable(params.get("minimumPayment")).ifPresent(v -> request.setMinimumPayment(new BigDecimal(v)));
+        Optional.ofNullable(params.get("minimumPaymentType")).ifPresent(request::setMinimumPaymentType);
+        Optional.ofNullable(params.get("frequency")).ifPresent(v -> request.setFrequency(Integer.parseInt(v)));
+        Optional.ofNullable(params.get("frequencyType")).ifPresent(request::setFrequencyType);
+        log.info("Attempting to create RESCHEDULE action for WC loan {} (expecting HTTP 400 and message '{}'): {}", loanId, expectedMessage,
+                params);
+
+        final CallFailedRuntimeException exception = fail(
+                () -> fineractFeignClient.workingCapitalLoanDelinquencyActions().createDelinquencyAction(loanId, request));
+        assertThat(exception.getStatus()).as("HTTP status code").isEqualTo(400);
+        assertThat(exception.getDeveloperMessage()).as("Developer message").contains(expectedMessage);
+    }
+
+    @Then("Admin fails to create WC delinquency reschedule action with no parameters with error containing {string}")
+    public void failToCreateEmptyRescheduleAction(final String expectedMessage) {
+        final Long loanId = getLoanId();
+        final PostWorkingCapitalLoansDelinquencyActionRequest request = new PostWorkingCapitalLoansDelinquencyActionRequest();
+        request.setAction("reschedule");
+        request.setLocale("en");
+        log.info("Attempting to create empty RESCHEDULE action for WC loan {} (expecting HTTP 400 and message '{}')", loanId,
+                expectedMessage);
 
         final CallFailedRuntimeException exception = fail(
                 () -> fineractFeignClient.workingCapitalLoanDelinquencyActions().createDelinquencyAction(loanId, request));
@@ -185,16 +229,9 @@ public class WorkingCapitalDelinquencyRescheduleStepDef extends AbstractStepDef 
         }
     }
 
-    @When("Admin creates WC delinquency reschedule action with decimal minimumPayment {string} and frequency {int} {word}")
-    public void createRescheduleActionWithDecimal(final String minimumPayment, final int frequency, final String frequencyType) {
-        createRescheduleActionInternal(new BigDecimal(minimumPayment), frequency, frequencyType);
-    }
-
-    private void createRescheduleActionInternal(final BigDecimal minimumPayment, final int frequency, final String frequencyType) {
+    private void executeRescheduleAction(final PostWorkingCapitalLoansDelinquencyActionRequest request) {
         final Long loanId = getLoanId();
-        final PostWorkingCapitalLoansDelinquencyActionRequest request = buildRescheduleRequest(minimumPayment, frequency, frequencyType);
-        log.info("Creating RESCHEDULE action for WC loan {}: minimumPayment={}, frequency={} {}", loanId, minimumPayment, frequency,
-                frequencyType);
+        log.info("Creating RESCHEDULE action for WC loan {}: {}", loanId, request);
 
         final PostWorkingCapitalLoansDelinquencyActionResponse result = ok(
                 () -> fineractFeignClient.workingCapitalLoanDelinquencyActions().createDelinquencyAction(loanId, request));
@@ -216,6 +253,9 @@ public class WorkingCapitalDelinquencyRescheduleStepDef extends AbstractStepDef 
                         () -> assertThat(actual.getEndDate()).as("endDate").isNull());
             case "minimumPayment" ->
                 assertThat(actual.getMinimumPayment()).as("minimumPayment").isEqualByComparingTo(new BigDecimal(expected));
+            case "minimumPaymentType" ->
+                verifyOptionalField(expected, v -> assertThat(actual.getMinimumPaymentType().name()).as("minimumPaymentType").isEqualTo(v),
+                        () -> assertThat(actual.getMinimumPaymentType()).as("minimumPaymentType").isNull());
             case "frequency" -> assertThat(actual.getFrequency()).as("frequency").isEqualTo(Integer.parseInt(expected));
             case "frequencyType" -> assertThat(actual.getFrequencyType().name()).as("frequencyType").isEqualTo(expected);
             default -> throw new IllegalArgumentException("Unknown action field: " + field);
@@ -255,11 +295,12 @@ public class WorkingCapitalDelinquencyRescheduleStepDef extends AbstractStepDef 
         return loanResponse.getLoanId();
     }
 
-    private PostWorkingCapitalLoansDelinquencyActionRequest buildRescheduleRequest(final BigDecimal minimumPayment, final int frequency,
-            final String frequencyType) {
+    private PostWorkingCapitalLoansDelinquencyActionRequest buildRescheduleRequest(final BigDecimal minimumPayment,
+            final String minimumPaymentType, final int frequency, final String frequencyType) {
         final PostWorkingCapitalLoansDelinquencyActionRequest request = new PostWorkingCapitalLoansDelinquencyActionRequest();
         request.setAction("reschedule");
         request.setMinimumPayment(minimumPayment);
+        request.setMinimumPaymentType(minimumPaymentType);
         request.setFrequency(frequency);
         request.setFrequencyType(frequencyType);
         request.setLocale("en");

@@ -20,7 +20,6 @@ package org.apache.fineract.integrationtests.common.workingcapitalloan;
 
 import static org.apache.fineract.client.feign.util.FeignCalls.ok;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -36,20 +35,6 @@ public final class WorkingCapitalLoanDelinquencyActionHelper {
     private static final String DATE_FORMAT = "yyyy-MM-dd";
 
     private WorkingCapitalLoanDelinquencyActionHelper() {}
-
-    public static PostWorkingCapitalLoansDelinquencyActionResponse createRescheduleAction(final Long loanId,
-            final BigDecimal minimumPayment, final int frequency, final String frequencyType) {
-        final PostWorkingCapitalLoansDelinquencyActionRequest request = new PostWorkingCapitalLoansDelinquencyActionRequest();
-        request.setAction("reschedule");
-        request.setMinimumPayment(minimumPayment);
-        request.setFrequency(frequency);
-        request.setFrequencyType(frequencyType);
-        request.setLocale("en");
-        log.info("Creating RESCHEDULE delinquency action for loan {} minimumPayment={} frequency={} {}", loanId, minimumPayment, frequency,
-                frequencyType);
-        return ok(() -> FineractFeignClientHelper.getFineractFeignClient().workingCapitalLoanDelinquencyActions()
-                .createDelinquencyAction(loanId, request));
-    }
 
     public static PostWorkingCapitalLoansDelinquencyActionResponse createDelinquencyAction(final Long loanId, final String action,
             final LocalDate startDate, final LocalDate endDate) {
