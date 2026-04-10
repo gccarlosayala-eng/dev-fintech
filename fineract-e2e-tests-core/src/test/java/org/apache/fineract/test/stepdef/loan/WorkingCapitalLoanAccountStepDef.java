@@ -869,10 +869,10 @@ public class WorkingCapitalLoanAccountStepDef extends AbstractStepDef {
 
     @SuppressWarnings("unchecked")
     private void trackLoanIdIfEnabled(final Long loanId) {
-        final List<Long> trackedIds = testContext().get(TestContextKey.WC_LOAN_IDS);
-        if (trackedIds != null) {
-            trackedIds.add(loanId);
+        if (testContext().get(TestContextKey.WC_LOAN_IDS) == null) {
+            testContext().set(TestContextKey.WC_LOAN_IDS, new ArrayList<>());
         }
+        ((List<Long>) testContext().get(TestContextKey.WC_LOAN_IDS)).add(loanId);
     }
 
     private void modifyWorkingCapitalLoanAccount(final List<String> loanData) {

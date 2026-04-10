@@ -240,9 +240,9 @@ Feature: Working Capital Delinquency Reschedule Action
     When Admin runs inline COB job for Working Capital Loan
     Then WC loan delinquency range schedule periods have specific data:
       | periodNumber | expectedAmount | outstandingAmount | delinquentDays | delinquentAmount |
-      | 1            | 300            | 300               |                |                  |
-      | 5            | 300            | 300               |                |                  |
-      | 6            | 100            | 100               |                |                  |
+      | 1            | 300            | 300               | 197            | 300              |
+      | 5            | 300            | 300               | 77             | 300              |
+      | 6            | 100            | 100               | 47             | 100              |
       | 8            | 100            | 100               |                |                  |
 
   @TestRailId:C74503
