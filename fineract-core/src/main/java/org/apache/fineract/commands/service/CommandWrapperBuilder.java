@@ -249,6 +249,7 @@ import static org.apache.fineract.useradministration.service.AppUserConstants.RE
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.infrastructure.accountnumberformat.service.AccountNumberFormatConstants;
@@ -2822,7 +2823,7 @@ public class CommandWrapperBuilder {
     }
 
     public CommandWrapperBuilder updateDepositAmountForRecurringDepositAccount(final Long accountId) {
-        this.actionName = DepositsApiConstants.UPDATE_DEPOSIT_AMOUNT.toUpperCase();
+        this.actionName = DepositsApiConstants.UPDATE_DEPOSIT_AMOUNT.toUpperCase(Locale.ROOT);
         this.entityName = ENTITY_RECURRINGDEPOSITACCOUNT;
         this.entityId = accountId;
         this.savingsId = accountId;
@@ -2955,14 +2956,14 @@ public class CommandWrapperBuilder {
 
     public CommandWrapperBuilder createAccountNumberFormat() {
         this.actionName = ACTION_CREATE;
-        this.entityName = AccountNumberFormatConstants.ENTITY_NAME.toUpperCase();
+        this.entityName = AccountNumberFormatConstants.ENTITY_NAME.toUpperCase(Locale.ROOT);
         this.href = AccountNumberFormatConstants.resourceRelativeURL;
         return this;
     }
 
     public CommandWrapperBuilder updateAccountNumberFormat(final Long accountNumberFormatId) {
         this.actionName = ACTION_UPDATE;
-        this.entityName = AccountNumberFormatConstants.ENTITY_NAME.toUpperCase();
+        this.entityName = AccountNumberFormatConstants.ENTITY_NAME.toUpperCase(Locale.ROOT);
         this.entityId = accountNumberFormatId;
         this.href = AccountNumberFormatConstants.resourceRelativeURL + "/" + accountNumberFormatId;
         return this;
@@ -2970,7 +2971,7 @@ public class CommandWrapperBuilder {
 
     public CommandWrapperBuilder deleteAccountNumberFormat(final Long accountNumberFormatId) {
         this.actionName = ACTION_DELETE;
-        this.entityName = AccountNumberFormatConstants.ENTITY_NAME.toUpperCase();
+        this.entityName = AccountNumberFormatConstants.ENTITY_NAME.toUpperCase(Locale.ROOT);
         this.entityId = accountNumberFormatId;
         this.href = "AccountNumberFormatConstants.resourceRelativeURL" + "/" + accountNumberFormatId;
         this.json = "{}";
@@ -3286,10 +3287,10 @@ public class CommandWrapperBuilder {
     }
 
     public CommandWrapperBuilder createProduct(String productType) {
-        this.entityName = productType.toUpperCase() + "PRODUCT"; // To Support
-                                                                 // different
-                                                                 // type of
-                                                                 // products
+        this.entityName = productType.toUpperCase(Locale.ROOT) + "PRODUCT"; // To Support
+        // different
+        // type of
+        // products
         this.actionName = ACTION_CREATE;
         this.entityId = null;
         this.href = "/products/" + productType;
@@ -3297,7 +3298,7 @@ public class CommandWrapperBuilder {
     }
 
     public CommandWrapperBuilder updateProduct(String productType, final Long productId) {
-        this.entityName = productType.toUpperCase() + "PRODUCT";
+        this.entityName = productType.toUpperCase(Locale.ROOT) + "PRODUCT";
         this.actionName = ACTION_UPDATE;
         this.entityId = productId;
         this.href = "/products/" + productType + "/" + productId;
@@ -3305,10 +3306,10 @@ public class CommandWrapperBuilder {
     }
 
     public CommandWrapperBuilder createAccount(String accountType) {
-        this.entityName = accountType.toUpperCase() + "ACCOUNT"; // To Support
-                                                                 // different
-                                                                 // type of
-                                                                 // Accounts
+        this.entityName = accountType.toUpperCase(Locale.ROOT) + "ACCOUNT"; // To Support
+        // different
+        // type of
+        // Accounts
         this.actionName = ACTION_CREATE;
         this.entityId = null;
         this.href = "/accounts/" + accountType;
@@ -3316,7 +3317,7 @@ public class CommandWrapperBuilder {
     }
 
     public CommandWrapperBuilder updateAccount(String accountType, final Long accountId) {
-        this.entityName = accountType.toUpperCase() + "ACCOUNT";
+        this.entityName = accountType.toUpperCase(Locale.ROOT) + "ACCOUNT";
         this.actionName = ACTION_UPDATE;
         this.entityId = accountId;
         this.href = "/accounts/" + accountType + "/" + accountId;
@@ -3324,8 +3325,8 @@ public class CommandWrapperBuilder {
     }
 
     public CommandWrapperBuilder createProductCommand(String productType, String command, final Long productId) {
-        this.entityName = productType.toUpperCase() + "PRODUCT";
-        this.actionName = ACTION_CREATE + "_" + command.toUpperCase();
+        this.entityName = productType.toUpperCase(Locale.ROOT) + "PRODUCT";
+        this.actionName = ACTION_CREATE + "_" + command.toUpperCase(Locale.ROOT);
         this.entityId = productId;
         this.href = "/products/" + productType + "/" + productId + "?command=" + command;
         return this;
@@ -3356,8 +3357,8 @@ public class CommandWrapperBuilder {
     }
 
     public CommandWrapperBuilder createAccountCommand(String accountType, final Long accountId, String command) {
-        this.entityName = accountType.toUpperCase() + "ACCOUNT";
-        this.actionName = command.toUpperCase();
+        this.entityName = accountType.toUpperCase(Locale.ROOT) + "ACCOUNT";
+        this.actionName = command.toUpperCase(Locale.ROOT);
         this.entityId = accountId;
         this.href = "/accounts/" + accountType + "/" + accountId + "?command=" + command;
         return this;
