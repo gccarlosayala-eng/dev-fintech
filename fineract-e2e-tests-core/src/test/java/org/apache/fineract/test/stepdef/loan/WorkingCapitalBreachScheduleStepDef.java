@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.test.stepdef.loan;
 
+import static org.apache.fineract.client.feign.util.FeignCalls.fail;
 import static org.apache.fineract.client.feign.util.FeignCalls.ok;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -29,8 +30,10 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.client.feign.FineractFeignClient;
+import org.apache.fineract.client.feign.util.CallFailedRuntimeException;
 import org.apache.fineract.client.models.PostWorkingCapitalLoansResponse;
 import org.apache.fineract.client.models.WorkingCapitalLoanBreachScheduleData;
+import org.apache.fineract.test.helper.ErrorMessageHelper;
 import org.apache.fineract.test.stepdef.AbstractStepDef;
 import org.apache.fineract.test.support.TestContextKey;
 
@@ -48,6 +51,28 @@ public class WorkingCapitalBreachScheduleStepDef extends AbstractStepDef {
         assertThat(schedule).as("Breach schedule should be empty").isEmpty();
 
         log.info("Verified that loan {} has no breach schedule", loanId);
+    }
+
+    @Then("Working Capital loan breach schedule has {int} period(s)")
+    public void verifyBreachScheduleSize(final int expectedSize) {
+        final Long loanId = extractLoanId();
+        final List<WorkingCapitalLoanBreachScheduleData> schedule = retrieveBreachSchedule(loanId);
+
+        assertThat(schedule).as("Breach schedule size for loan %d", loanId).hasSize(expectedSize);
+
+        log.info("Verified that loan {} has {} breach schedule period(s)", loanId, expectedSize);
+    }
+
+    @Then("Retrieving Working Capital loan breach schedule for non-existent loanId {long} fails with status code {int}")
+    public void verifyBreachScheduleNotFound(final long loanId, final int expectedStatus) {
+        final CallFailedRuntimeException exception = fail(
+                () -> fineractClient.workingCapitalLoanBreachSchedule().retrieveBreachSchedule(loanId));
+
+        assertThat(exception.getStatus())
+                .as(ErrorMessageHelper.wrongStatusCodeInBreachScheduleRetrieval(exception.getStatus(), expectedStatus, loanId))
+                .isEqualTo(expectedStatus);
+
+        log.info("Verified that GET breach schedule for loanId {} fails with status {}", loanId, expectedStatus);
     }
 
     @Then("Working Capital loan breach schedule has the following data:")
