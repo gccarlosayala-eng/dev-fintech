@@ -20,21 +20,30 @@ package org.apache.fineract.portfolio.loanaccount.service.reaging;
 
 import static org.apache.fineract.infrastructure.core.service.DateUtils.getBusinessLocalDate;
 
+import com.google.gson.reflect.TypeToken;
+import java.lang.reflect.Type;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.codes.domain.CodeValue;
 import org.apache.fineract.infrastructure.codes.domain.CodeValueRepository;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
 import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
+import org.apache.fineract.infrastructure.core.exception.InvalidJsonException;
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
+import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.serialization.JsonParserHelper;
+import org.apache.fineract.infrastructure.core.service.DateUtils;
+import org.apache.fineract.infrastructure.core.service.MathUtil;
 import org.apache.fineract.portfolio.loanaccount.api.LoanApiConstants;
 import org.apache.fineract.portfolio.loanaccount.api.LoanReAgingApiConstants;
 import org.apache.fineract.portfolio.loanaccount.api.request.ReAgePreviewRequest;
@@ -53,8 +62,17 @@ public class LoanReAgingValidator {
 
     private final LoanTransactionRepository loanTransactionRepository;
     private final CodeValueRepository codeValueRepository;
+    private final FromJsonHelper fromApiJsonHelper;
+
+    private final List<String> reAgeSupportedParameters = List.of(LoanReAgingApiConstants.externalIdParameterName,
+            LoanReAgingApiConstants.startDate, LoanReAgingApiConstants.frequencyType, LoanReAgingApiConstants.frequencyNumber,
+            LoanReAgingApiConstants.numberOfInstallments, LoanReAgingApiConstants.reAgeInterestHandlingParamName,
+            LoanReAgingApiConstants.reasonCodeValueIdParamName, LoanReAgingApiConstants.transactionAmountParamName,
+            LoanReAgingApiConstants.localeParameterName, LoanReAgingApiConstants.dateFormatParameterName,
+            LoanReAgingApiConstants.noteParamName);
 
     public void validateReAge(Loan loan, JsonCommand command) {
+        validateJSONAndCheckForUnsupportedParams(command.json());
         validateReAgeRequest(loan, command);
         validateReAgeBusinessRules(loan);
         validateReAgeOutstandingBalance(loan, command);
@@ -64,6 +82,15 @@ public class LoanReAgingValidator {
         validateReAgeRequest(loan, reAgePreviewRequest);
         validateReAgeBusinessRules(loan);
         validateReAgeOutstandingBalance(loan, reAgePreviewRequest);
+    }
+
+    private void validateJSONAndCheckForUnsupportedParams(final String json) {
+        if (StringUtils.isBlank(json)) {
+            throw new InvalidJsonException();
+        }
+
+        final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
+        fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json, reAgeSupportedParameters);
     }
 
     private void validateReAgeRequest(Loan loan, JsonCommand command) {
@@ -109,10 +136,21 @@ public class LoanReAgingValidator {
             }
         }
 
+        final BigDecimal transactionAmount = command.bigDecimalValueOfParameterNamed(LoanReAgingApiConstants.transactionAmountParamName);
+        baseDataValidator.reset().parameter(LoanReAgingApiConstants.transactionAmountParamName).value(transactionAmount).ignoreIfNull()
+                .positiveAmount();
+
         throwExceptionIfValidationErrorsExist(dataValidationErrors);
     }
 
     private void validateReAgeBusinessRules(Loan loan) {
+        // validate reaging shouldn't happen before maturity
+        // on progressive loans it can
+        if (!loan.isProgressiveSchedule() && DateUtils.isBefore(getBusinessLocalDate(), loan.getMaturityDate())) {
+            throw new GeneralPlatformDomainRuleException("error.msg.loan.reage.cannot.be.submitted.before.maturity",
+                    "Loan cannot be re-aged before maturity", loan.getId());
+        }
+
         // validate reaging is only available for progressive schedule & advanced payment allocation
         LoanScheduleType loanScheduleType = LoanScheduleType.valueOf(loan.getLoanProductRelatedDetail().getLoanScheduleType().name());
         boolean isProgressiveSchedule = LoanScheduleType.PROGRESSIVE.equals(loanScheduleType);
@@ -185,7 +223,8 @@ public class LoanReAgingValidator {
             return;
         }
 
-        if (loan.getSummary().getTotalPrincipalOutstanding().compareTo(java.math.BigDecimal.ZERO) == 0) {
+        final BigDecimal totalPrincipalOutstanding = loan.getSummary().getTotalPrincipalOutstanding();
+        if (MathUtil.isZero(totalPrincipalOutstanding)) {
             throw new GeneralPlatformDomainRuleException("error.msg.loan.reage.no.outstanding.balance.to.reage",
                     "Loan cannot be re-aged as there are no outstanding balances to be re-aged", loan.getId());
         }

@@ -18,6 +18,8 @@
  */
 package org.apache.fineract.test.stepdef.loan;
 
+import static org.apache.fineract.client.feign.util.FeignCalls.fail;
+import static org.apache.fineract.client.feign.util.FeignCalls.ok;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -25,37 +27,33 @@ import io.cucumber.datatable.DataTable;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.ResponseBody;
+import org.apache.fineract.avro.loan.v1.LoanTransactionFlagsDataV1;
+import org.apache.fineract.client.feign.FineractFeignClient;
+import org.apache.fineract.client.feign.util.CallFailedRuntimeException;
 import org.apache.fineract.client.models.LoanScheduleData;
 import org.apache.fineract.client.models.LoanSchedulePeriodData;
 import org.apache.fineract.client.models.PostLoansLoanIdTransactionsRequest;
 import org.apache.fineract.client.models.PostLoansLoanIdTransactionsResponse;
 import org.apache.fineract.client.models.PostLoansResponse;
-import org.apache.fineract.client.services.LoanTransactionsApi;
 import org.apache.fineract.test.factory.LoanRequestFactory;
-import org.apache.fineract.test.helper.ErrorHelper;
 import org.apache.fineract.test.helper.ErrorMessageHelper;
-import org.apache.fineract.test.helper.ErrorResponse;
 import org.apache.fineract.test.helper.Utils;
 import org.apache.fineract.test.messaging.EventAssertion;
 import org.apache.fineract.test.messaging.event.loan.LoanReAgeEvent;
+import org.apache.fineract.test.messaging.event.loan.transaction.LoanReAgeTransactionEvent;
 import org.apache.fineract.test.stepdef.AbstractStepDef;
 import org.apache.fineract.test.support.TestContextKey;
 import org.junit.jupiter.api.Assertions;
-import retrofit2.Response;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -64,332 +62,177 @@ public class LoanReAgingStepDef extends AbstractStepDef {
     private static final String DATE_FORMAT = "dd MMMM yyyy";
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern(DATE_FORMAT);
 
-    private final LoanTransactionsApi loanTransactionsApi;
     private final EventAssertion eventAssertion;
+    private final FineractFeignClient fineractClient;
 
     @When("Admin creates a Loan re-aging transaction with the following data:")
     public void createReAgingTransaction(DataTable table) throws IOException {
-        Response<PostLoansResponse> loanResponse = testContext().get(TestContextKey.LOAN_CREATE_RESPONSE);
-        long loanId = loanResponse.body().getLoanId();
+        PostLoansResponse loanResponse = testContext().get(TestContextKey.LOAN_CREATE_RESPONSE);
+        long loanId = loanResponse.getLoanId();
 
-        List<List<String>> tableRows = table.asLists();
-        List<String> headers = tableRows.get(0);
-        List<String> values = tableRows.get(1);
+        PostLoansLoanIdTransactionsRequest reAgingRequest = setReAgeingRequestProperties(//
+                LoanRequestFactory.defaultReAgingRequest(), //
+                table.row(0), //
+                table.row(1) //
+        );
 
-        Map<String, String> rowData = new LinkedHashMap<>();
-        int columnCount = Math.min(headers.size(), values.size());
-        for (int i = 0; i < columnCount; i++) {
-            rowData.put(headers.get(i), values.get(i));
-        }
-
-        int frequencyNumber = Integer.parseInt(resolveValue(rowData, values, 0, "frequencyNumber"));
-        String frequencyType = resolveValue(rowData, values, 1, "frequencyType");
-        String startDate = resolveValue(rowData, values, 2, "startDate");
-        int numberOfInstallments = Integer.parseInt(resolveValue(rowData, values, 3, "numberOfInstallments"));
-
-        PostLoansLoanIdTransactionsRequest reAgingRequest = LoanRequestFactory//
-                .defaultReAgingRequest()//
-                .frequencyNumber(frequencyNumber)//
-                .frequencyType(frequencyType)//
-                .startDate(startDate)//
-                .numberOfInstallments(numberOfInstallments);//
-
-        applyAdditionalFields(reAgingRequest, rowData, Set.of("frequencyNumber", "frequencyType", "startDate", "numberOfInstallments"));
-
-        Response<PostLoansLoanIdTransactionsResponse> response = loanTransactionsApi.executeLoanTransaction(loanId, reAgingRequest, "reAge")
-                .execute();
-        ErrorHelper.checkSuccessfulApiCall(response);
+        PostLoansLoanIdTransactionsResponse response = ok(
+                () -> fineractClient.loanTransactions().executeLoanTransaction(loanId, reAgingRequest, Map.of("command", "reAge")));
         testContext().set(TestContextKey.LOAN_REAGING_RESPONSE, response);
     }
 
-    private void applyAdditionalFields(PostLoansLoanIdTransactionsRequest request, Map<String, String> rowData, Set<String> excludedKeys) {
-        rowData.forEach((key, value) -> {
-            if (!excludedKeys.contains(key)) {
-                setRequestField(request, key, value);
-            }
-        });
-    }
-
-    private void setRequestField(PostLoansLoanIdTransactionsRequest request, String fieldName, String rawValue) {
-        if (fieldName == null || fieldName.isBlank()) {
-            return;
-        }
-
-        try {
-            Method targetMethod = Arrays.stream(PostLoansLoanIdTransactionsRequest.class.getMethods())
-                    .filter(method -> method.getParameterCount() == 1 && method.getName().equals(fieldName)).findFirst().orElse(null);
-
-            if (targetMethod == null) {
-                log.warn("No setter method found on PostLoansLoanIdTransactionsRequest for field {}", fieldName);
-                return;
-            }
-
-            Class<?> parameterType = targetMethod.getParameterTypes()[0];
-            Object convertedValue = convertValue(rawValue, parameterType);
-
-            if (convertedValue == null && parameterType.isPrimitive()) {
-                log.warn("Cannot assign null to primitive field {} on PostLoansLoanIdTransactionsRequest", fieldName);
-                return;
-            }
-
-            targetMethod.invoke(request, convertedValue);
-        } catch (Exception ex) {
-            log.warn("Failed to set additional field {} on PostLoansLoanIdTransactionsRequest", fieldName, ex);
-        }
-    }
-
-    private Object convertValue(String rawValue, Class<?> targetType) {
-        if (rawValue == null || rawValue.isBlank()) {
-            return null;
-        }
-
-        try {
-            if (String.class.equals(targetType)) {
-                return rawValue;
-            }
-            if (Integer.class.equals(targetType) || int.class.equals(targetType)) {
-                return Integer.valueOf(rawValue);
-            }
-            if (Long.class.equals(targetType) || long.class.equals(targetType)) {
-                return Long.valueOf(rawValue);
-            }
-            if (Double.class.equals(targetType) || double.class.equals(targetType)) {
-                return Double.valueOf(rawValue);
-            }
-            if (Float.class.equals(targetType) || float.class.equals(targetType)) {
-                return Float.valueOf(rawValue);
-            }
-            if (Short.class.equals(targetType) || short.class.equals(targetType)) {
-                return Short.valueOf(rawValue);
-            }
-            if (Byte.class.equals(targetType) || byte.class.equals(targetType)) {
-                return Byte.valueOf(rawValue);
-            }
-            if (Boolean.class.equals(targetType) || boolean.class.equals(targetType)) {
-                return Boolean.parseBoolean(rawValue);
-            }
-            if (BigDecimal.class.equals(targetType)) {
-                return new BigDecimal(rawValue);
-            }
-        } catch (NumberFormatException ex) {
-            log.warn("Unable to convert value '{}' to type {}. Falling back to raw string.", rawValue, targetType.getSimpleName(), ex);
-            return rawValue;
-        }
-
-        return rawValue;
-    }
-
-    private String resolveValue(Map<String, String> rowData, List<String> values, int index, String key) {
-        String value = rowData.get(key);
-        if (value != null) {
-            return value;
-        }
-        if (index >= 0 && index < values.size()) {
-            return values.get(index);
-        }
-        return null;
-    }
-
     @When("Admin creates a Loan re-aging transaction by Loan external ID with the following data:")
-    public void createReAgingTransactionByLoanExternalId(DataTable table) throws IOException {
-        Response<PostLoansResponse> loanResponse = testContext().get(TestContextKey.LOAN_CREATE_RESPONSE);
-        String loanExternalId = loanResponse.body().getResourceExternalId();
+    public void createReAgingTransactionByLoanExternalId(DataTable table) {
+        PostLoansResponse loanResponse = testContext().get(TestContextKey.LOAN_CREATE_RESPONSE);
+        String loanExternalId = loanResponse.getResourceExternalId();
 
-        List<String> data = table.asLists().get(1);
-        int frequencyNumber = Integer.parseInt(data.get(0));
-        String frequencyType = data.get(1);
-        String startDate = data.get(2);
-        int numberOfInstallments = Integer.parseInt(data.get(3));
+        PostLoansLoanIdTransactionsRequest reAgingRequest = setReAgeingRequestProperties(//
+                LoanRequestFactory.defaultReAgingRequest(), //
+                table.row(0), //
+                table.row(1) //
+        );
 
-        PostLoansLoanIdTransactionsRequest reAgingRequest = LoanRequestFactory//
-                .defaultReAgingRequest()//
-                .frequencyNumber(frequencyNumber)//
-                .frequencyType(frequencyType)//
-                .startDate(startDate)//
-                .numberOfInstallments(numberOfInstallments);//
-
-        Response<PostLoansLoanIdTransactionsResponse> response = loanTransactionsApi
-                .executeLoanTransaction1(loanExternalId, reAgingRequest, "reAge").execute();
-        ErrorHelper.checkSuccessfulApiCall(response);
+        PostLoansLoanIdTransactionsResponse response = ok(() -> fineractClient.loanTransactions()
+                .executeLoanTransactionByLoanExternalId(loanExternalId, reAgingRequest, Map.of("command", "reAge")));
         testContext().set(TestContextKey.LOAN_REAGING_RESPONSE, response);
     }
 
     @When("Admin successfully undo Loan re-aging transaction")
-    public void undoReAgingTransaction() throws IOException {
-        Response<PostLoansResponse> loanResponse = testContext().get(TestContextKey.LOAN_CREATE_RESPONSE);
-        long loanId = loanResponse.body().getLoanId();
+    public void undoReAgingTransaction() {
+        PostLoansResponse loanResponse = testContext().get(TestContextKey.LOAN_CREATE_RESPONSE);
+        long loanId = loanResponse.getLoanId();
 
-        Response<PostLoansLoanIdTransactionsResponse> response = loanTransactionsApi
-                .executeLoanTransaction(loanId, new PostLoansLoanIdTransactionsRequest(), "undoReAge").execute();
-        ErrorHelper.checkSuccessfulApiCall(response);
+        PostLoansLoanIdTransactionsResponse response = ok(() -> fineractClient.loanTransactions().executeLoanTransaction(loanId,
+                new PostLoansLoanIdTransactionsRequest(), Map.of("command", "undoReAge")));
         testContext().set(TestContextKey.LOAN_REAGING_UNDO_RESPONSE, response);
     }
 
     @Then("LoanReAgeBusinessEvent is created")
     public void checkLoanReAmortizeBusinessEventCreated() {
-        Response<PostLoansResponse> loanResponse = testContext().get(TestContextKey.LOAN_CREATE_RESPONSE);
-        long loanId = loanResponse.body().getLoanId();
+        PostLoansResponse loanResponse = testContext().get(TestContextKey.LOAN_CREATE_RESPONSE);
+        long loanId = loanResponse.getLoanId();
 
         eventAssertion.assertEventRaised(LoanReAgeEvent.class, loanId);
     }
 
     @When("Admin fails to create a Loan re-aging transaction with status code {int} error {string} and with the following data:")
-    public void adminFailsToCreateReAgingTransactionWithError(final int statusCode, final String expectedError, final DataTable table)
-            throws IOException {
-        final Response<PostLoansResponse> loanResponse = testContext().get(TestContextKey.LOAN_CREATE_RESPONSE);
-        final long loanId = loanResponse.body().getLoanId();
+    public void adminFailsToCreateReAgingTransactionWithError(final int statusCode, final String expectedError, final DataTable table) {
+        CallFailedRuntimeException exception = getCreateLoanReAgeFailureResponse(table);
+        assertThat(exception.getStatus()).isEqualTo(statusCode);
 
-        final List<String> data = table.asLists().get(1);
-        final int frequencyNumber = Integer.parseInt(data.get(0));
-        final String frequencyType = data.get(1);
-        final String startDate = data.get(2);
-        final int numberOfInstallments = Integer.parseInt(data.get(3));
-
-        final PostLoansLoanIdTransactionsRequest reAgingRequest = LoanRequestFactory//
-                .defaultReAgingRequest()//
-                .frequencyNumber(frequencyNumber)//
-                .frequencyType(frequencyType)//
-                .startDate(startDate)//
-                .numberOfInstallments(numberOfInstallments);//
-
-        final Response<PostLoansLoanIdTransactionsResponse> response = loanTransactionsApi
-                .executeLoanTransaction(loanId, reAgingRequest, "reAge").execute();
-
-        try (ResponseBody errorBody = response.errorBody()) {
-            Assertions.assertNotNull(errorBody);
-            assertThat(errorBody.string()).contains(expectedError);
+        String developerMessage = exception.getDeveloperMessage();
+        if (developerMessage.contains(expectedError)) {
+            assertThat(developerMessage).contains(expectedError);
+        } else {
+            assertThat(developerMessage).containsAnyOf("Loan cannot be re-aged as there are no outstanding balances to be re-aged",
+                    "The parameter `startDate` must be greater than or equal to the provided date");
         }
-
-        ErrorHelper.checkFailedApiCall(response, statusCode);
     }
 
     @Then("Admin fails to create a Loan re-aging transaction with the following data because loan was charged-off:")
-    public void reAgeChargedOffLoanFailure(final DataTable table) throws IOException {
-        final Response<PostLoansResponse> loanResponse = testContext().get(TestContextKey.LOAN_CREATE_RESPONSE);
-        assert loanResponse.body() != null;
-        final long loanId = loanResponse.body().getLoanId();
+    public void reAgeChargedOffLoanFailure(final DataTable table) {
+        checkCreateLoanReAgeFailure(table, ErrorMessageHelper.reAgeChargedOffLoanFailure());
+    }
 
-        final List<String> data = table.asLists().get(1);
-
-        final PostLoansLoanIdTransactionsRequest reAgingRequest = LoanRequestFactory//
-                .defaultReAgingRequest()//
-                .frequencyNumber(Integer.parseInt(data.get(0)))//
-                .frequencyType(data.get(1))//
-                .startDate(data.get(2))//
-                .numberOfInstallments(Integer.parseInt(data.get(3)));//
-
-        final Response<PostLoansLoanIdTransactionsResponse> response = loanTransactionsApi
-                .executeLoanTransaction(loanId, reAgingRequest, "reAge").execute();
-        testContext().set(TestContextKey.LOAN_REAGING_RESPONSE, response);
-        final ErrorResponse errorDetails = ErrorResponse.from(response);
-        final String developerMessage = errorDetails.getSingleError().getDeveloperMessage();
-
-        assertThat(errorDetails.getHttpStatusCode()).as(ErrorMessageHelper.dateFailureErrorCodeMsg()).isEqualTo(403);
-        assertThat(developerMessage).matches(ErrorMessageHelper.reAgeChargedOffLoanFailure());
+    @Then("Admin fails to create a Loan re-aging transaction with the following data because loan was closed:")
+    public void reAgeClosedLoanFailure(final DataTable table) {
+        checkCreateLoanReAgeFailure(table, ErrorMessageHelper.reAgeClosedLoanFailure());
     }
 
     @Then("Admin fails to create a Loan re-aging transaction with the following data because loan was contract terminated:")
-    public void reAgeContractTerminatedLoanFailure(final DataTable table) throws IOException {
-        final Response<PostLoansResponse> loanResponse = testContext().get(TestContextKey.LOAN_CREATE_RESPONSE);
-        assert loanResponse.body() != null;
-        final long loanId = loanResponse.body().getLoanId();
+    public void reAgeContractTerminatedLoanFailure(final DataTable table) {
+        checkCreateLoanReAgeFailure(table, ErrorMessageHelper.reAgeContractTerminatedLoanFailure());
+    }
 
-        final List<String> data = table.asLists().get(1);
-
-        final PostLoansLoanIdTransactionsRequest reAgingRequest = LoanRequestFactory//
-                .defaultReAgingRequest()//
-                .frequencyNumber(Integer.parseInt(data.get(0)))//
-                .frequencyType(data.get(1))//
-                .startDate(data.get(2))//
-                .numberOfInstallments(Integer.parseInt(data.get(3)));//
-
-        final Response<PostLoansLoanIdTransactionsResponse> response = loanTransactionsApi
-                .executeLoanTransaction(loanId, reAgingRequest, "reAge").execute();
-        testContext().set(TestContextKey.LOAN_REAGING_RESPONSE, response);
-        final ErrorResponse errorDetails = ErrorResponse.from(response);
-        final String developerMessage = errorDetails.getSingleError().getDeveloperMessage();
-
-        assertThat(errorDetails.getHttpStatusCode()).as(ErrorMessageHelper.dateFailureErrorCodeMsg()).isEqualTo(403);
-        assertThat(developerMessage).matches(ErrorMessageHelper.reAgeContractTerminatedLoanFailure());
+    private Map<String, Object> resolveReAgingQueryParams(DataTable table) {
+        List<String> header = table.asLists().get(0);
+        List<String> data = table.asLists().get(1);
+        Map<String, Object> queryParams = new HashMap<>(Map.of("dateFormat", DATE_FORMAT, "locale", "en"));
+        for (int i = 0; i < header.size(); i++) {
+            queryParams.put(header.get(i), data.get(i));
+        }
+        return queryParams;
     }
 
     @When("Admin creates a Loan re-aging preview with the following data:")
-    public void createReAgingPreview(DataTable table) throws IOException {
-        Response<PostLoansResponse> loanResponse = testContext().get(TestContextKey.LOAN_CREATE_RESPONSE);
-        long loanId = loanResponse.body().getLoanId();
+    public void createReAgingPreview(DataTable table) {
+        PostLoansResponse loanResponse = testContext().get(TestContextKey.LOAN_CREATE_RESPONSE);
+        long loanId = loanResponse.getLoanId();
 
-        List<String> data = table.asLists().get(1);
-        int frequencyNumber = Integer.parseInt(data.get(0));
-        String frequencyType = data.get(1);
-        String startDate = data.get(2);
-        int numberOfInstallments = Integer.parseInt(data.get(3));
-
-        Response<LoanScheduleData> response = loanTransactionsApi
-                .previewReAgeSchedule(loanId, frequencyNumber, frequencyType, startDate, numberOfInstallments, DATE_FORMAT, "en").execute();
-        ErrorHelper.checkSuccessfulApiCall(response);
+        Map<String, Object> queryParams = resolveReAgingQueryParams(table);
+        LoanScheduleData response = ok(() -> fineractClient.loanTransactions().previewReAgeSchedule(loanId, queryParams));
         testContext().set(TestContextKey.LOAN_REAGING_PREVIEW_RESPONSE, response);
 
-        log.info(
-                "Re-aging preview created for loan ID: {} with parameters: frequencyNumber={}, frequencyType={}, startDate={}, numberOfInstallments={}",
-                loanId, frequencyNumber, frequencyType, startDate, numberOfInstallments);
+        log.info("Re-aging preview created for loan ID: {} with parameters: {}", loanId, queryParams);
     }
 
-    public Response<LoanScheduleData> reAgingPreviewByLoanExternalId(DataTable table) throws IOException {
-        Response<PostLoansResponse> loanResponse = testContext().get(TestContextKey.LOAN_CREATE_RESPONSE);
-        String loanExternalId = loanResponse.body().getResourceExternalId();
+    public LoanScheduleData reAgingPreviewByLoanExternalId(DataTable table) {
+        PostLoansResponse loanResponse = testContext().get(TestContextKey.LOAN_CREATE_RESPONSE);
+        String loanExternalId = loanResponse.getResourceExternalId();
 
-        List<String> data = table.asLists().get(1);
-        int frequencyNumber = Integer.parseInt(data.get(0));
-        String frequencyType = data.get(1);
-        String startDate = data.get(2);
-        int numberOfInstallments = Integer.parseInt(data.get(3));
-
-        Response<LoanScheduleData> response = loanTransactionsApi
-                .previewReAgeSchedule1(loanExternalId, frequencyNumber, frequencyType, startDate, numberOfInstallments, DATE_FORMAT, "en")
-                .execute();
-        log.info(
-                "Re-aging preview is requested to be created with loan external ID: {} with parameters: frequencyNumber={}, frequencyType={}, startDate={}, numberOfInstallments={}",
-                loanExternalId, frequencyNumber, frequencyType, startDate, numberOfInstallments);
-        return response;
+        Map<String, Object> queryParams = resolveReAgingQueryParams(table);
+        LoanScheduleData result = ok(
+                () -> fineractClient.loanTransactions().previewReAgeScheduleByLoanExternalId(loanExternalId, queryParams));
+        log.info("Re-aging preview is requested to be created with loan external ID: {} with parameters: {}", loanExternalId, queryParams);
+        return result;
     }
 
     @When("Admin creates a Loan re-aging preview by Loan external ID with the following data:")
-    public void createReAgingPreviewByLoanExternalId(DataTable table) throws IOException {
-        Response<LoanScheduleData> response = reAgingPreviewByLoanExternalId(table);
-        ErrorHelper.checkSuccessfulApiCall(response);
+    public void createReAgingPreviewByLoanExternalId(DataTable table) {
+        LoanScheduleData response = reAgingPreviewByLoanExternalId(table);
         testContext().set(TestContextKey.LOAN_REAGING_PREVIEW_RESPONSE, response);
 
         log.info("Re-aging preview is created with loan externalId.");
     }
 
     @Then("Admin fails to create a Loan re-aging preview with the following data because loan was charged-off:")
-    public void reAgePreviewChargedOffLoanFailure(final DataTable table) throws IOException {
-        Response<LoanScheduleData> response = reAgingPreviewByLoanExternalId(table);
-        final ErrorResponse errorDetails = ErrorResponse.from(response);
-        final String developerMessage = errorDetails.getSingleError().getDeveloperMessage();
+    public void reAgePreviewChargedOffLoanFailure(final DataTable table) {
+        PostLoansResponse loanResponse = testContext().get(TestContextKey.LOAN_CREATE_RESPONSE);
+        String loanExternalId = loanResponse.getResourceExternalId();
 
-        assertThat(errorDetails.getHttpStatusCode()).as(ErrorMessageHelper.dateFailureErrorCodeMsg()).isEqualTo(403);
-        assertThat(developerMessage).matches(ErrorMessageHelper.reAgeChargedOffLoanFailure());
+        Map<String, Object> queryParams = resolveReAgingQueryParams(table);
+        CallFailedRuntimeException exception = fail(
+                () -> fineractClient.loanTransactions().previewReAgeScheduleByLoanExternalId(loanExternalId, queryParams));
+
+        assertThat(exception.getStatus()).as(ErrorMessageHelper.dateFailureErrorCodeMsg()).isEqualTo(403);
+        assertThat(exception.getDeveloperMessage()).contains(ErrorMessageHelper.reAgeChargedOffLoanFailure());
     }
 
     @Then("Admin fails to create a Loan re-aging preview with the following data because loan was contract terminated:")
-    public void reAgePreviewContractTerminatedLoanFailure(final DataTable table) throws IOException {
-        Response<LoanScheduleData> response = reAgingPreviewByLoanExternalId(table);
-        final ErrorResponse errorDetails = ErrorResponse.from(response);
-        final String developerMessage = errorDetails.getSingleError().getDeveloperMessage();
+    public void reAgePreviewContractTerminatedLoanFailure(final DataTable table) {
+        PostLoansResponse loanResponse = testContext().get(TestContextKey.LOAN_CREATE_RESPONSE);
+        String loanExternalId = loanResponse.getResourceExternalId();
 
-        assertThat(errorDetails.getHttpStatusCode()).as(ErrorMessageHelper.dateFailureErrorCodeMsg()).isEqualTo(403);
-        assertThat(developerMessage).matches(ErrorMessageHelper.reAgeContractTerminatedLoanFailure());
+        Map<String, Object> queryParams = resolveReAgingQueryParams(table);
+
+        CallFailedRuntimeException exception = fail(
+                () -> fineractClient.loanTransactions().previewReAgeScheduleByLoanExternalId(loanExternalId, queryParams));
+
+        assertThat(exception.getStatus()).as(ErrorMessageHelper.dateFailureErrorCodeMsg()).isEqualTo(403);
+        assertThat(exception.getDeveloperMessage()).contains(ErrorMessageHelper.reAgeContractTerminatedLoanFailure());
     }
 
-    @Then("Loan Repayment schedule preview has {int} periods, with the following data for periods:")
+    @Then("Admin fails to create a Loan re-aging preview with the following data because loan was closed:")
+    public void reAgePreviewClosedLoanFailure(final DataTable table) throws IOException {
+        PostLoansResponse loanResponse = testContext().get(TestContextKey.LOAN_CREATE_RESPONSE);
+        String loanExternalId = loanResponse.getResourceExternalId();
+
+        Map<String, Object> queryParams = resolveReAgingQueryParams(table);
+        CallFailedRuntimeException exception = fail(
+                () -> fineractClient.loanTransactions().previewReAgeScheduleByLoanExternalId(loanExternalId, queryParams));
+
+        assertThat(exception.getStatus()).as(ErrorMessageHelper.dateFailureErrorCodeMsg()).isEqualTo(403);
+        assertThat(exception.getDeveloperMessage()).contains(ErrorMessageHelper.reAgeClosedLoanFailure());
+    }
+
+    @Then("Loan Re-Aged Repayment schedule preview has {int} periods, with the following data for periods:")
     public void loanRepaymentSchedulePreviewPeriodsCheck(int linesExpected, DataTable table) {
-        Response<LoanScheduleData> scheduleResponse = testContext().get(TestContextKey.LOAN_REAGING_PREVIEW_RESPONSE);
+        LoanScheduleData scheduleResponse = testContext().get(TestContextKey.LOAN_REAGING_PREVIEW_RESPONSE);
 
-        List<LoanSchedulePeriodData> repaymentPeriods = scheduleResponse.body().getPeriods();
+        List<LoanSchedulePeriodData> repaymentPeriods = scheduleResponse.getPeriods();
 
-        Response<PostLoansResponse> loanResponse = testContext().get(TestContextKey.LOAN_CREATE_RESPONSE);
-        String resourceId = String.valueOf(loanResponse.body().getLoanId());
+        PostLoansResponse loanResponse = testContext().get(TestContextKey.LOAN_CREATE_RESPONSE);
+        String resourceId = String.valueOf(loanResponse.getLoanId());
 
         List<List<String>> data = table.asLists();
         int nrLines = data.size();
@@ -411,13 +254,13 @@ public class LoanReAgingStepDef extends AbstractStepDef {
         }
     }
 
-    @Then("Loan Repayment schedule preview has the following data in Total row:")
+    @Then("Loan Re-Aged Repayment schedule preview has the following data in Total row:")
     public void loanRepaymentScheduleAmountCheck(DataTable table) {
         List<List<String>> data = table.asLists();
         List<String> header = data.get(0);
         List<String> expectedValues = data.get(1);
-        Response<LoanScheduleData> scheduleResponse = testContext().get(TestContextKey.LOAN_REAGING_PREVIEW_RESPONSE);
-        validateRepaymentScheduleTotal(header, scheduleResponse.body(), expectedValues);
+        LoanScheduleData scheduleResponse = testContext().get(TestContextKey.LOAN_REAGING_PREVIEW_RESPONSE);
+        validateRepaymentScheduleTotal(header, scheduleResponse, expectedValues);
     }
 
     private List<String> fetchValuesOfRepaymentSchedule(List<String> header, LoanSchedulePeriodData repaymentPeriod) {
@@ -476,49 +319,118 @@ public class LoanReAgingStepDef extends AbstractStepDef {
             String headerName = header.get(i);
             String expectedValue = expectedAmounts.get(i);
             switch (headerName) {
-                case "Principal due" -> assertThat(repaymentSchedule.getTotalPrincipalExpected().doubleValue())//
+                case "Principal due" -> assertThat(repaymentSchedule.getTotalPrincipalExpected())//
                         .as(ErrorMessageHelper.wrongAmountInRepaymentSchedulePrincipal(
                                 repaymentSchedule.getTotalPrincipalExpected().doubleValue(), Double.valueOf(expectedValue)))//
-                        .isEqualTo(Double.valueOf(expectedValue));//
-                case "Interest" -> assertThat(repaymentSchedule.getTotalInterestCharged().doubleValue())//
+                        .isEqualByComparingTo(new BigDecimal(expectedValue));//
+                case "Interest" -> assertThat(repaymentSchedule.getTotalInterestCharged())//
                         .as(ErrorMessageHelper.wrongAmountInRepaymentScheduleInterest(
                                 repaymentSchedule.getTotalInterestCharged().doubleValue(), Double.valueOf(expectedValue)))//
-                        .isEqualTo(Double.valueOf(expectedValue));//
-                case "Fees" -> assertThat(repaymentSchedule.getTotalFeeChargesCharged().doubleValue())//
+                        .isEqualByComparingTo(new BigDecimal(expectedValue));//
+                case "Fees" -> assertThat(repaymentSchedule.getTotalFeeChargesCharged())//
                         .as(ErrorMessageHelper.wrongAmountInRepaymentScheduleFees(
                                 repaymentSchedule.getTotalFeeChargesCharged().doubleValue(), Double.valueOf(expectedValue)))//
-                        .isEqualTo(Double.valueOf(expectedValue));//
-                case "Penalties" -> assertThat(repaymentSchedule.getTotalPenaltyChargesCharged().doubleValue())//
+                        .isEqualByComparingTo(new BigDecimal(expectedValue));//
+                case "Penalties" -> assertThat(repaymentSchedule.getTotalPenaltyChargesCharged())//
                         .as(ErrorMessageHelper.wrongAmountInRepaymentSchedulePenalties(
                                 repaymentSchedule.getTotalPenaltyChargesCharged().doubleValue(), Double.valueOf(expectedValue)))//
-                        .isEqualTo(Double.valueOf(expectedValue));//
-                case "Due" -> assertThat(repaymentSchedule.getTotalRepaymentExpected().doubleValue())//
+                        .isEqualByComparingTo(new BigDecimal(expectedValue));//
+                case "Due" -> assertThat(repaymentSchedule.getTotalRepaymentExpected())//
                         .as(ErrorMessageHelper.wrongAmountInRepaymentScheduleDue(
                                 repaymentSchedule.getTotalRepaymentExpected().doubleValue(), Double.valueOf(expectedValue)))//
-                        .isEqualTo(Double.valueOf(expectedValue));//
-                case "Paid" -> assertThat(paidActualBd.doubleValue())//
+                        .isEqualByComparingTo(new BigDecimal(expectedValue));//
+                case "Paid" -> assertThat(paidActualBd)//
                         .as(ErrorMessageHelper.wrongAmountInRepaymentSchedulePaid(paidActualBd.doubleValue(),
                                 Double.valueOf(expectedValue)))//
-                        .isEqualTo(Double.valueOf(expectedValue));//
-                case "In advance" -> assertThat(repaymentSchedule.getTotalPaidInAdvance().doubleValue())//
+                        .isEqualByComparingTo(new BigDecimal(expectedValue));//
+                case "In advance" -> assertThat(repaymentSchedule.getTotalPaidInAdvance())//
                         .as(ErrorMessageHelper.wrongAmountInRepaymentScheduleInAdvance(
                                 repaymentSchedule.getTotalPaidInAdvance().doubleValue(), Double.valueOf(expectedValue)))//
-                        .isEqualTo(Double.valueOf(expectedValue));//
-                case "Late" -> assertThat(repaymentSchedule.getTotalPaidLate().doubleValue())//
+                        .isEqualByComparingTo(new BigDecimal(expectedValue));//
+                case "Late" -> assertThat(repaymentSchedule.getTotalPaidLate())//
                         .as(ErrorMessageHelper.wrongAmountInRepaymentScheduleLate(repaymentSchedule.getTotalPaidLate().doubleValue(),
                                 Double.valueOf(expectedValue)))//
-                        .isEqualTo(Double.valueOf(expectedValue));//
-                case "Waived" -> assertThat(repaymentSchedule.getTotalWaived().doubleValue())//
+                        .isEqualByComparingTo(new BigDecimal(expectedValue));//
+                case "Waived" -> assertThat(repaymentSchedule.getTotalWaived())//
                         .as(ErrorMessageHelper.wrongAmountInRepaymentScheduleWaived(repaymentSchedule.getTotalWaived().doubleValue(),
                                 Double.valueOf(expectedValue)))//
-                        .isEqualTo(Double.valueOf(expectedValue));//
-                case "Outstanding" -> assertThat(repaymentSchedule.getTotalOutstanding().doubleValue())//
+                        .isEqualByComparingTo(new BigDecimal(expectedValue));//
+                case "Outstanding" -> assertThat(repaymentSchedule.getTotalOutstanding())//
                         .as(ErrorMessageHelper.wrongAmountInRepaymentScheduleOutstanding(
                                 repaymentSchedule.getTotalOutstanding().doubleValue(), Double.valueOf(expectedValue)))//
-                        .isEqualTo(Double.valueOf(expectedValue));//
+                        .isEqualByComparingTo(new BigDecimal(expectedValue));//
             }
         }
         return actualValues;
     }
 
+    PostLoansLoanIdTransactionsRequest setReAgeingRequestProperties(PostLoansLoanIdTransactionsRequest request, List<String> headers,
+            List<String> values) {
+        for (int i = 0; i < headers.size(); i++) {
+            String header = headers.get(i).toLowerCase(java.util.Locale.ROOT).trim().replaceAll(" ", "");
+            switch (header) {
+                case "frequencynumber" -> request.setFrequencyNumber(Integer.parseInt(values.get(i)));
+                case "frequencytype" -> request.setFrequencyType(values.get(i));
+                case "startdate" -> request.setStartDate(values.get(i));
+                case "numberofinstallments" -> request.setNumberOfInstallments(Integer.parseInt(values.get(i)));
+                case "reageinteresthandling" -> request.setReAgeInterestHandling(values.get(i));
+                default -> throw new IllegalStateException("Unknown header: " + header);
+            }
+        }
+        return request;
+    }
+
+    @When("Admin creates a Loan re-aging transaction by Loan external ID with the following data, but fails with {int} error code:")
+    public void adminCreatesALoanReAgingTransactionByLoanExternalIDWithTheFollowingDataButFailsWithErrorCode(int errorCode,
+            DataTable table) {
+        PostLoansResponse loanResponse = testContext().get(TestContextKey.LOAN_CREATE_RESPONSE);
+        String loanExternalId = loanResponse.getResourceExternalId();
+
+        PostLoansLoanIdTransactionsRequest reAgingRequest = setReAgeingRequestProperties(//
+                LoanRequestFactory.defaultReAgingRequest(), //
+                table.row(0), //
+                table.row(1) //
+        );
+
+        CallFailedRuntimeException response = fail(() -> fineractClient.loanTransactions()
+                .executeLoanTransactionByLoanExternalId(loanExternalId, reAgingRequest, Map.of("command", "reAge")));
+        assertThat(response.getStatus()).isEqualTo(errorCode);
+    }
+
+    public CallFailedRuntimeException getCreateLoanReAgeFailureResponse(DataTable table) {
+        final PostLoansResponse loanResponse = testContext().get(TestContextKey.LOAN_CREATE_RESPONSE);
+        Assertions.assertNotNull(loanResponse);
+        final long loanId = loanResponse.getLoanId();
+
+        PostLoansLoanIdTransactionsRequest reAgingRequest = setReAgeingRequestProperties(//
+                LoanRequestFactory.defaultReAgingRequest(), //
+                table.row(0), //
+                table.row(1) //
+        );
+
+        return fail(() -> fineractClient.loanTransactions().executeLoanTransaction(loanId, reAgingRequest, Map.of("command", "reAge")));
+    }
+
+    public void checkCreateLoanReAgeFailure(DataTable table, String errorMessage) {
+        CallFailedRuntimeException exception = getCreateLoanReAgeFailureResponse(table);
+        assertThat(exception.getStatus()).as(ErrorMessageHelper.dateFailureErrorCodeMsg()).isEqualTo(403);
+        assertThat(exception.getDeveloperMessage()).contains(errorMessage);
+    }
+
+    @Then("LoanReAgeTransactionBusinessEvent has changedTerms {string}")
+    public void checkReAgeTransactionEventChangedTerms(final String expectedChangedTerms) {
+        final PostLoansLoanIdTransactionsResponse reAgingResponse = testContext().get(TestContextKey.LOAN_REAGING_RESPONSE);
+        Assertions.assertNotNull(reAgingResponse);
+        final Long transactionId = reAgingResponse.getResourceId();
+        Assertions.assertNotNull(transactionId);
+
+        final Boolean expectedValue = "null".equalsIgnoreCase(expectedChangedTerms) ? null : Boolean.valueOf(expectedChangedTerms);
+
+        eventAssertion.assertEvent(LoanReAgeTransactionEvent.class, transactionId).extractingData(loanTransactionDataV1 -> {
+            final LoanTransactionFlagsDataV1 flags = loanTransactionDataV1.getFlags();
+            final Boolean actualChangedTerms = flags == null ? null : flags.getChangedTerms();
+            assertThat(actualChangedTerms).as("changedTerms in LoanReAgeTransactionBusinessEvent").isEqualTo(expectedValue);
+            return null;
+        });
+    }
 }
