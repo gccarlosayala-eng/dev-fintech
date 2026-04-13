@@ -99,6 +99,12 @@ public class WorkingCapitalLoanRequestFactory {
                 .locale(DEFAULT_LOCALE);//
     }
 
+    public PostWorkingCapitalLoansLoanIdRequest defaultWorkingCapitalLoanDiscountFeeRequest() {
+        return new PostWorkingCapitalLoansLoanIdRequest()//
+                .dateFormat(DATE_FORMAT)//
+                .locale(DEFAULT_LOCALE);//
+    }
+
     public PostWorkingCapitalLoansLoanIdRequest defaultWorkingCapitalLoanUndoDisburseRequest() {
         return new PostWorkingCapitalLoansLoanIdRequest()//
                 .note("")//

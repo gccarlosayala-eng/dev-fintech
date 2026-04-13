@@ -33,9 +33,12 @@ import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,6 +58,7 @@ import org.apache.fineract.client.models.GetJournalEntriesTransactionIdResponse;
 import org.apache.fineract.client.models.GetWorkingCapitalLoanProductsProductIdResponse;
 import org.apache.fineract.client.models.GetWorkingCapitalLoanTransactionIdResponse;
 import org.apache.fineract.client.models.GetWorkingCapitalLoansLoanIdResponse;
+import org.apache.fineract.client.models.LoanTransactionEnumData;
 import org.apache.fineract.client.models.PostAllowAttributeOverrides;
 import org.apache.fineract.client.models.PostClientsResponse;
 import org.apache.fineract.client.models.PostCodeValueDataResponse;
@@ -70,7 +74,6 @@ import org.apache.fineract.client.models.PostWorkingCapitalLoansRequest;
 import org.apache.fineract.client.models.PostWorkingCapitalLoansResponse;
 import org.apache.fineract.client.models.ProjectedAmortizationScheduleData;
 import org.apache.fineract.client.models.ProjectedAmortizationSchedulePaymentData;
-import org.apache.fineract.client.models.PutWorkingCapitalLoansLoanIdDiscountRequest;
 import org.apache.fineract.client.models.PutWorkingCapitalLoansLoanIdRequest;
 import org.apache.fineract.client.models.PutWorkingCapitalLoansLoanIdResponse;
 import org.apache.fineract.client.models.WorkingCapitalLoanCommandTemplateData;
@@ -89,6 +92,7 @@ import org.apache.fineract.test.helper.WorkingCapitalScheduleMatcher;
 import org.apache.fineract.test.messaging.event.EventCheckHelper;
 import org.apache.fineract.test.stepdef.AbstractStepDef;
 import org.apache.fineract.test.support.TestContextKey;
+import org.junit.jupiter.api.Assertions;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -965,24 +969,20 @@ public class WorkingCapitalLoanAccountStepDef extends AbstractStepDef {
         assertThat(exception.getDeveloperMessage()).contains(ErrorMessageHelper.undoDisbursalDisallowedFailure(actualLoanStatus));
     }
 
-    @And("Admin successfully update discount with {string} amount on Working Capital loan account")
-    public void updateDiscountWCLoan(String discountAmount) {
-        final PostWorkingCapitalLoansResponse loanResponse = testContext().get(TestContextKey.LOAN_CREATE_RESPONSE);
-        long loanId = loanResponse.getLoanId();
-
-        PutWorkingCapitalLoansLoanIdDiscountRequest updateDiscountRequest = workingCapitalLoanRequestFactory
-                .defaultWorkingCapitalLoanUpdateDiscountRequest().discountAmount(new BigDecimal(discountAmount));
-
-        PutWorkingCapitalLoansLoanIdResponse updateDiscountResponse = ok(
-                () -> fineractClient.workingCapitalLoans().updateWorkingCapitalLoanDiscountById(loanId, updateDiscountRequest));
-
-        log.info("Working Capital Loan discount updated with ID: {}", updateDiscountResponse.getResourceId());
-    }
-
     @And("Update discount with {string} amount on Working Capital loan account failed due to already added discount before disbursement")
     public void updateDiscountWCLoanAlreadyAddedFailure(String discountAmount) {
         String errorMessage = ErrorMessageHelper.discountAlreadySetBeforeDisburseFailure();
         updateDiscountFailedCheck(discountAmount, errorMessage);
+    }
+
+    @And("Discount with {string} amount on Working Capital loan account for last disbursement")
+    public void updateDiscountWCLoanDisbursement(String discountAmount) {
+        PostWorkingCapitalLoansLoanIdResponse lastDisbursementResponse = testContext().get(TestContextKey.LOAN_DISBURSE_RESPONSE);
+
+        final PostWorkingCapitalLoansLoanIdRequest request = workingCapitalLoanRequestFactory.defaultWorkingCapitalLoanDiscountFeeRequest() //
+                .relatedResourceId(lastDisbursementResponse.getResourceId()).transactionAmount(new BigDecimal(discountAmount));
+
+        executeStateTransition("DISCOUNTFEE", request, "DISCOUNT", false);
     }
 
     @And("Update discount with {string} amount on Working Capital loan account failed due to date diff from disbursement date")
@@ -1087,13 +1087,18 @@ public class WorkingCapitalLoanAccountStepDef extends AbstractStepDef {
 
     public void updateDiscountFailedCheck(String discountAmount, String errorMessage) {
         final PostWorkingCapitalLoansResponse loanResponse = testContext().get(TestContextKey.LOAN_CREATE_RESPONSE);
+        Assertions.assertNotNull(loanResponse);
+        Assertions.assertNotNull(loanResponse.getLoanId());
         long loanId = loanResponse.getLoanId();
+        PostWorkingCapitalLoansLoanIdResponse lastDisbursementResponse = testContext().get(TestContextKey.LOAN_DISBURSE_RESPONSE);
+        Assertions.assertNotNull(lastDisbursementResponse);
 
-        PutWorkingCapitalLoansLoanIdDiscountRequest updateDiscountRequest = workingCapitalLoanRequestFactory
-                .defaultWorkingCapitalLoanUpdateDiscountRequest().discountAmount(new BigDecimal(discountAmount));
+        PostWorkingCapitalLoansLoanIdRequest updateDiscountRequest = workingCapitalLoanRequestFactory
+                .defaultWorkingCapitalLoanDiscountFeeRequest().relatedResourceId(lastDisbursementResponse.getResourceId())
+                .transactionAmount(new BigDecimal(discountAmount));
 
-        CallFailedRuntimeException exception = fail(
-                () -> fineractClient.workingCapitalLoans().updateWorkingCapitalLoanDiscountById(loanId, updateDiscountRequest));
+        CallFailedRuntimeException exception = fail(() -> fineractClient.workingCapitalLoans().stateTransitionWorkingCapitalLoanById(loanId,
+                "DISCOUNTFEE", updateDiscountRequest));
         assertThat(exception.getStatus()).as(errorMessage).isEqualTo(400);
         assertThat(exception.getDeveloperMessage()).contains(errorMessage);
     }
@@ -2448,4 +2453,49 @@ public class WorkingCapitalLoanAccountStepDef extends AbstractStepDef {
         return resolved;
     }
 
+    private <T> void assertTable(Class<T> tClass, DataTable dataTable, List<T> actualTransactions)
+            throws InvocationTargetException, IllegalAccessException {
+        List<List<String>> table = dataTable.asLists();
+        List<String> header = table.getFirst();
+        List<List<String>> expectedTransactions = table.subList(1, table.size());
+        assertTable(tClass, header, expectedTransactions, actualTransactions);
+    }
+
+    private <T> void assertTable(Class<T> tClass, List<String> header, List<List<String>> expectedRows, List<T> actualRows)
+            throws InvocationTargetException, IllegalAccessException {
+        // expected and actual list of transactions are empty
+        if (expectedRows.isEmpty() && (actualRows == null || actualRows.isEmpty())) {
+            return;
+        }
+        Assertions.assertNotNull(actualRows);
+        Assertions.assertEquals(expectedRows.size(), actualRows.size());
+        List<Method> methods = header.stream()
+                .map(fieldName -> Arrays.stream(tClass.getDeclaredMethods()).filter(m -> m.getName().equalsIgnoreCase("get" + fieldName))
+                        .findAny().orElseThrow(() -> new RuntimeException(new NoSuchMethodException("No such Method: "))))
+                .toList();
+        for (int i = 0; i < expectedRows.size(); i++) {
+            T actualValues = actualRows.get(i);
+            List<String> expectedValues = expectedRows.get(i);
+            for (int iM = 0; iM < methods.size(); iM++) {
+                Object actual = methods.get(iM).invoke(actualValues);
+                String expected = expectedValues.get(iM);
+                String message = "Line " + (i + 1) + " has miss match on field: " + header.get(iM);
+                if (actual instanceof BigDecimal) {
+                    Assertions.assertEquals(Double.parseDouble(expected), ((BigDecimal) actual).doubleValue(), message);
+                } else if (actual instanceof LoanTransactionEnumData) {
+                    Assertions.assertEquals(expected, ((LoanTransactionEnumData) actual).getValue(), message);
+                } else {
+                    Assertions.assertEquals(expectedValues.get(iM), actual == null ? null : actual.toString(), message);
+                }
+            }
+        }
+    }
+
+    @And("Working Capital Loan has transactions:")
+    public void workingCapitalLoanHasTransactions(final DataTable dataTable) throws InvocationTargetException, IllegalAccessException {
+        // Write code here that turns the phrase above into concrete actions
+        GetWorkingCapitalLoansLoanIdResponse getWorkingCapitalLoansLoanIdResponse = retrieveLoanDetails(getCreatedLoanId());
+        List<GetWorkingCapitalLoanTransactionIdResponse> actualTransactions = getWorkingCapitalLoansLoanIdResponse.getTransactions();
+        assertTable(GetWorkingCapitalLoanTransactionIdResponse.class, dataTable, actualTransactions);
+    }
 }
