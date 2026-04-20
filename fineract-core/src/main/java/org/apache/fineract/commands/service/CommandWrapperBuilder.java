@@ -881,6 +881,14 @@ public class CommandWrapperBuilder {
         return this;
     }
 
+    public CommandWrapperBuilder creditBalanceRefundWorkingCapitalLoanTransaction(final Long loanId) {
+        this.actionName = ACTION_CREDITBALANCEREFUND;
+        this.entityName = ENTITY_WORKINGCAPITALLOAN;
+        this.entityId = loanId;
+        this.href = "/working-capital-loans/" + loanId + "/transactions?command=creditBalanceRefund";
+        return this;
+    }
+
     public CommandWrapperBuilder createClientIdentifier(final Long clientId) {
         this.actionName = ACTION_CREATE;
         this.entityName = ENTITY_CLIENTIDENTIFIER;

@@ -1378,6 +1378,46 @@ public class WorkingCapitalLoanAccountStepDef extends AbstractStepDef {
         validateRepaymentResponse(response, transactionAmount, transactionDate, loanId);
     }
 
+    @Then("Customer makes credit balance refund on {string} with {double} transaction amount on Working Capital loan")
+    public void makeWorkingCapitalLoanCreditBalanceRefund(final String transactionDate, final double transactionAmount) {
+        final Long loanId = getCreatedLoanId();
+        final PostWorkingCapitalLoanTransactionsRequest cbrRequest = buildCreditBalanceRefundRequest(transactionDate, transactionAmount,
+                null);
+        final PostWorkingCapitalLoanTransactionsResponse response = executeCreditBalanceRefundById(loanId, cbrRequest);
+        validateRepaymentResponse(response, transactionAmount, transactionDate, loanId);
+    }
+
+    @Then("Customer makes credit balance refund on {string} with {double} transaction amount on Working Capital loan with the following payment details:")
+    public void makeWorkingCapitalLoanCreditBalanceRefundWithPaymentDetails(final String transactionDate, final double transactionAmount,
+            final DataTable table) {
+        final Long loanId = getCreatedLoanId();
+        final PostWorkingCapitalLoanTransactionsPaymentDetailRequest paymentDetails = buildPaymentDetailsFromTable(table);
+        final PostWorkingCapitalLoanTransactionsRequest cbrRequest = buildCreditBalanceRefundRequest(transactionDate, transactionAmount,
+                paymentDetails);
+        final PostWorkingCapitalLoanTransactionsResponse response = executeCreditBalanceRefundById(loanId, cbrRequest);
+        validateRepaymentResponse(response, transactionAmount, transactionDate, loanId);
+    }
+
+    private PostWorkingCapitalLoanTransactionsRequest buildCreditBalanceRefundRequest(final String transactionDate,
+            final double transactionAmount, final PostWorkingCapitalLoanTransactionsPaymentDetailRequest paymentDetails) {
+        final PostWorkingCapitalLoanTransactionsRequest request = workingCapitalProductRequestFactory
+                .defaultWorkingCapitalLoanRepaymentRequest().transactionDate(transactionDate)
+                .transactionAmount(BigDecimal.valueOf(transactionAmount));
+
+        if (paymentDetails != null) {
+            request.paymentDetails(paymentDetails);
+        }
+        return request;
+    }
+
+    private PostWorkingCapitalLoanTransactionsResponse executeCreditBalanceRefundById(final Long loanId,
+            final PostWorkingCapitalLoanTransactionsRequest cbrRequest) {
+        log.debug("Making creditBalanceRefund for loan ID: {}, transactionDate: {}, transactionAmount: {}", loanId,
+                cbrRequest.getTransactionDate(), cbrRequest.getTransactionAmount());
+        return ok(() -> fineractClient.workingCapitalLoanTransactions().executeWorkingCapitalLoanTransactionById(loanId,
+                "creditBalanceRefund", cbrRequest));
+    }
+
     private PostWorkingCapitalLoanTransactionsRequest buildRepaymentRequest(final String transactionDate, final double transactionAmount,
             final PostWorkingCapitalLoanTransactionsPaymentDetailRequest paymentDetails) {
         final PostWorkingCapitalLoanTransactionsRequest request = workingCapitalProductRequestFactory
@@ -1564,6 +1604,22 @@ public class WorkingCapitalLoanAccountStepDef extends AbstractStepDef {
         }
 
         log.debug("Verified working capital loan repayment failed with expected error for loan {}", loanId);
+    }
+
+    @Then("Initiating a credit balance refund on {string} with {double} transaction amount on Working Capital loan results an error with the following data:")
+    public void initiateCreditBalanceRefundResultsAnErrorWithDetails(final String transactionDate, final double transactionAmount,
+            final DataTable table) {
+        final Long loanId = getCreatedLoanId();
+        final PostWorkingCapitalLoanTransactionsRequest cbrRequest = buildCreditBalanceRefundRequest(transactionDate, transactionAmount,
+                null);
+
+        final CallFailedRuntimeException exception = fail(() -> fineractClient.workingCapitalLoanTransactions()
+                .executeWorkingCapitalLoanTransactionById(loanId, "creditBalanceRefund", cbrRequest));
+
+        if (table != null) {
+            verifyRepaymentErrorWithTable(exception, table);
+        }
+        log.debug("Verified working capital loan credit balance refund failed with expected error for loan {}", loanId);
     }
 
     private void verifyRepaymentErrorWithTable(final CallFailedRuntimeException exception, final DataTable table) {
