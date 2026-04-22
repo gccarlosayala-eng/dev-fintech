@@ -3170,15 +3170,6 @@ public class CommandWrapperBuilder {
         return this;
     }
 
-    public CommandWrapperBuilder inactivateClientCharge(final Long clientId, final Long chargeId) {
-        this.actionName = ACTION_INACTIVATE;
-        this.entityName = ClientApiConstants.CLIENT_CHARGES_RESOURCE_NAME;
-        this.entityId = chargeId;
-        this.clientId = clientId;
-        this.href = "/clients/" + clientId + "/charges/" + chargeId + "?command=inactivate";
-        return this;
-    }
-
     public CommandWrapperBuilder undoClientTransaction(final Long clientId, final Long transactionId) {
         this.actionName = ClientApiConstants.CLIENT_TRANSACTION_ACTION_UNDO;
         this.entityName = ClientApiConstants.CLIENT_RESOURCE_NAME;
