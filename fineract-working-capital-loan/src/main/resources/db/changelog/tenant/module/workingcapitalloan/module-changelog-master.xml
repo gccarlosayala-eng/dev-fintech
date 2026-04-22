@@ -49,4 +49,5 @@
   <include relativeToChangelogFile="true" file="parts/0025_breach_schedule.xml"/>
   <include relativeToChangelogFile="true" file="parts/0026_wc_loan_repayment_classification_code.xml"/>
   <include relativeToChangelogFile="true" file="parts/0027_wc_loan_repayment_transaction_external_events.xml"/>
+  <include relativeToChangelogFile="true" file="parts/0028_create_wc_delinquency_and_breach_configuration_tables.xml"/>
 </databaseChangeLog>
