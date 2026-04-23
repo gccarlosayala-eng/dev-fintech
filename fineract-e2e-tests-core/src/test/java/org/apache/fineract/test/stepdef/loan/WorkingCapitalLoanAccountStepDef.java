@@ -131,6 +131,7 @@ public class WorkingCapitalLoanAccountStepDef extends AbstractStepDef {
         final PostWorkingCapitalLoansResponse response = ok(
                 () -> fineractClient.workingCapitalLoans().submitWorkingCapitalLoanApplication(loansRequest));
         testContext().set(TestContextKey.LOAN_CREATE_RESPONSE, response);
+        testContext().set(TestContextKey.WORKING_CAPITAL_LOAN_CREATE_RESPONSE, response);
         log.info("Working Capital Loan created with dynamic product ID: {}, Loan ID: {}", loanProductId, response.getLoanId());
     }
 
@@ -903,6 +904,7 @@ public class WorkingCapitalLoanAccountStepDef extends AbstractStepDef {
         final PostWorkingCapitalLoansResponse response = ok(
                 () -> fineractClient.workingCapitalLoans().submitWorkingCapitalLoanApplication(loansRequest));
         testContext().set(TestContextKey.LOAN_CREATE_RESPONSE, response);
+        testContext().set(TestContextKey.WORKING_CAPITAL_LOAN_CREATE_RESPONSE, response);
         trackLoanIdIfEnabled(response.getLoanId());
         log.info("Working Capital Loan created with ID: {}", response.getLoanId());
     }
@@ -1201,6 +1203,7 @@ public class WorkingCapitalLoanAccountStepDef extends AbstractStepDef {
         final PostWorkingCapitalLoansResponse response = ok(
                 () -> fineractClient.workingCapitalLoans().submitWorkingCapitalLoanApplication(request));
         testContext().set(TestContextKey.LOAN_CREATE_RESPONSE, response);
+        testContext().set(TestContextKey.WORKING_CAPITAL_LOAN_CREATE_RESPONSE, response);
         log.info("Working Capital Loan created, loan ID: {}", response.getLoanId());
     }
 
