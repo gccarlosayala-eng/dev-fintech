@@ -1,0 +1,104 @@
+name: Verify Liquibase DDL Safety
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - '**/db/changelog/**/*.xml'
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  ddl-safety-check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Fetch base branch
+        run: git fetch origin ${{ github.event.pull_request.base.ref }}
+
+      - name: Check for override label
+        id: override
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          LABELS=$(gh pr view ${{ github.event.pull_request.number }} --json labels --jq '.labels[].name' 2>/dev/null || true)
+          if echo "$LABELS" | grep -q "ddl-safety-override"; then
+            echo "override=true" >> $GITHUB_OUTPUT
+            echo "Override label found — check will report but not block."
+          else
+            echo "override=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run DDL safety check
+        id: ddl-check
+        continue-on-error: true
+        run: |
+          chmod +x scripts/check-liquibase-ddl-safety.sh
+          ./scripts/check-liquibase-ddl-safety.sh \
+            --base-ref origin/${{ github.event.pull_request.base.ref }} \
+            --head-ref ${{ github.event.pull_request.head.sha }} \
+            --config config/liquibase \
+            --output-dir ${{ runner.temp }}/ddl-safety-report
+
+      - name: Write step summary
+        if: always()
+        run: |
+          if [ -f "${{ runner.temp }}/ddl-safety-report/report.md" ]; then
+            cat "${{ runner.temp }}/ddl-safety-report/report.md" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## Liquibase DDL Safety Check - PASSED" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "No dangerous DDL changes detected." >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Comment on PR
+        if: always()
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          MARKER="<!-- liquibase-ddl-safety-report -->"
+
+          # Find existing comment by marker
+          COMMENT_ID=$(gh api "repos/${{ github.repository }}/issues/${PR_NUMBER}/comments" \
+            --jq ".[] | select(.body | contains(\"${MARKER}\")) | .id" | head -1)
+
+          if [ "${{ steps.ddl-check.outcome }}" == "failure" ] && \
+             [ -f "${{ runner.temp }}/ddl-safety-report/report.md" ]; then
+            BODY="${MARKER}
+          $(cat ${{ runner.temp }}/ddl-safety-report/report.md)"
+
+            if [ -n "$COMMENT_ID" ]; then
+              gh api "repos/${{ github.repository }}/issues/comments/${COMMENT_ID}" \
+                -X PATCH -f body="${BODY}"
+            else
+              gh pr comment "${PR_NUMBER}" --repo ${{ github.repository }} --body "${BODY}"
+            fi
+          elif [ -n "$COMMENT_ID" ]; then
+            # No violations anymore, delete the old comment
+            gh api "repos/${{ github.repository }}/issues/comments/${COMMENT_ID}" -X DELETE
+          fi
+
+      - name: Archive report
+        if: always()
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: ddl-safety-report
+          path: ${{ runner.temp }}/ddl-safety-report/
+          retention-days: 30
+
+      - name: Fail if critical violations found (unless overridden)
+        if: steps.ddl-check.outcome == 'failure' && steps.override.outputs.override != 'true'
+        run: |
+          echo "::error::Dangerous DDL changes detected on critical tables. See the report above for details."
+          echo "::error::Add the 'ddl-safety-override' label to bypass this check if the change is intentional."
+          exit 1
