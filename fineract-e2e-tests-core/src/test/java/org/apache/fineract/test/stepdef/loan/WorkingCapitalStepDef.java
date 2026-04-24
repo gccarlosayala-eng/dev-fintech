@@ -25,6 +25,7 @@ import static org.apache.fineract.test.support.TestContextKey.WORKING_CAPITAL_NE
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
@@ -36,6 +37,7 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.client.feign.FineractFeignClient;
+import org.apache.fineract.client.feign.ObjectMapperFactory;
 import org.apache.fineract.client.feign.services.WorkingCapitalLoanProductsApi;
 import org.apache.fineract.client.feign.util.CallFailedRuntimeException;
 import org.apache.fineract.client.models.CommandProcessingResult;
@@ -59,6 +61,7 @@ import org.apache.fineract.client.models.WorkingCapitalBreachRequest;
 import org.apache.fineract.client.models.WorkingCapitalNearBreachRequest;
 import org.apache.fineract.test.data.accounttype.AccountTypeResolver;
 import org.apache.fineract.test.data.accounttype.DefaultAccountType;
+import org.apache.fineract.test.data.paymenttype.PaymentTypeResolver;
 import org.apache.fineract.test.data.workingcapitalproduct.DefaultWorkingCapitalLoanProduct;
 import org.apache.fineract.test.data.workingcapitalproduct.WCGLAccountMapping;
 import org.apache.fineract.test.data.workingcapitalproduct.WorkingCapitalBreachFrequencyType;
@@ -66,6 +69,8 @@ import org.apache.fineract.test.factory.LoanProductsRequestFactory;
 import org.apache.fineract.test.factory.WorkingCapitalRequestFactory;
 import org.apache.fineract.test.helper.ErrorMessageHelper;
 import org.apache.fineract.test.helper.Utils;
+import org.apache.fineract.test.helper.WorkingCapitalLoanProductAdvancedAccountingTestHelper;
+import org.apache.fineract.test.helper.WorkingCapitalLoanProductAdvancedAccountingTestHelper.AdvancedAccountingExpectation;
 import org.apache.fineract.test.stepdef.AbstractStepDef;
 import org.apache.fineract.test.support.TestContextKey;
 import org.assertj.core.api.SoftAssertions;
@@ -78,6 +83,11 @@ public class WorkingCapitalStepDef extends AbstractStepDef {
     private final WorkingCapitalRequestFactory workingCapitalRequestFactory;
     private final FineractFeignClient fineractFeignClient;
     private final AccountTypeResolver accountTypeResolver;
+    private final PaymentTypeResolver paymentTypeResolver;
+    private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getShared();
+    private static final String WC_ADVANCED_MAPPINGS_EXPECTED_CREATE = "wcAdvancedMappingsExpectedCreate";
+    private static final String WC_ADVANCED_MAPPINGS_EXPECTED_UPDATE = "wcAdvancedMappingsExpectedUpdate";
+    private static final String WC_ADVANCED_MAPPINGS_EXPECTED_FIRST_UPDATE = "wcAdvancedMappingsExpectedFirstUpdate";
 
     public static final String NAME_FIELD_NAME = "name";
     public static final String SHORT_NAME_FIELD = "shortName";
@@ -1696,6 +1706,58 @@ public class WorkingCapitalStepDef extends AbstractStepDef {
         testContext().set(TestContextKey.WORKING_CAPITAL_LOAN_PRODUCT_TEMPLATE_RESPONSE, template);
     }
 
+    @When("Admin creates a new Working Capital Loan Product with Cash based accounting and advanced mappings")
+    public void createWorkingCapitalLoanProductWithAdvancedMappings() {
+        final String productName = DefaultWorkingCapitalLoanProduct.WCLP.getName() + Utils.randomStringGenerator("_", 10);
+        final PostWorkingCapitalLoanProductsRequest request = workingCapitalRequestFactory
+                .defaultWorkingCapitalLoanProductRequestWithCashAccounting().name(productName);
+
+        final AdvancedAccountingExpectation expected = WorkingCapitalLoanProductAdvancedAccountingTestHelper
+                .prepareAdvancedMappings(request, paymentTypeResolver, fineractFeignClient);
+        testContext().set(WC_ADVANCED_MAPPINGS_EXPECTED_CREATE, expected);
+
+        final PostWorkingCapitalLoanProductsResponse response = createWorkingCapitalLoanProduct(request);
+        testContext().set(TestContextKey.WORKING_CAPITAL_LOAN_PRODUCT_CREATE_RESPONSE, response);
+        testContext().set(TestContextKey.WORKING_CAPITAL_LOAN_PRODUCT_CREATE_REQUEST, request);
+    }
+
+    @When("Admin updates Working Capital Loan Product with advanced mappings")
+    public void updateWorkingCapitalLoanProductWithAdvancedMappings() {
+        final PostWorkingCapitalLoanProductsResponse createResponse = testContext()
+                .get(TestContextKey.WORKING_CAPITAL_LOAN_PRODUCT_CREATE_RESPONSE);
+        final Long resourceId = createResponse.getResourceId();
+        final PostWorkingCapitalLoanProductsRequest cashRequest = workingCapitalRequestFactory
+                .defaultWorkingCapitalLoanProductRequestWithCashAccounting();
+        final PutWorkingCapitalLoanProductsProductIdRequest updateRequest = buildCashBasedUpdateRequest(cashRequest);
+        final AdvancedAccountingExpectation expected = WorkingCapitalLoanProductAdvancedAccountingTestHelper
+                .prepareAdvancedMappings(updateRequest, paymentTypeResolver, fineractFeignClient);
+        testContext().set(WC_ADVANCED_MAPPINGS_EXPECTED_UPDATE, expected);
+
+        final PutWorkingCapitalLoanProductsProductIdResponse response = ok(
+                () -> workingCapitalApi().updateWorkingCapitalLoanProduct(resourceId, updateRequest, Map.of()));
+
+        testContext().set(TestContextKey.WORKING_CAPITAL_LOAN_PRODUCT_UPDATE_RESPONSE, response);
+        testContext().set(TestContextKey.WORKING_CAPITAL_LOAN_PRODUCT_UPDATE_REQUEST, updateRequest);
+    }
+
+    @When("Admin updates Working Capital Loan Product with advanced mappings twice")
+    public void updateWorkingCapitalLoanProductWithAdvancedMappingsTwice() {
+        final PostWorkingCapitalLoanProductsResponse createResponse = testContext()
+                .get(TestContextKey.WORKING_CAPITAL_LOAN_PRODUCT_CREATE_RESPONSE);
+        final Long resourceId = createResponse.getResourceId();
+
+        final PutWorkingCapitalLoanProductsProductIdRequest firstUpdateRequest = buildAdvancedMappingsUpdateRequest();
+        ok(() -> workingCapitalApi().updateWorkingCapitalLoanProduct(resourceId, firstUpdateRequest, Map.of()));
+        testContext().set(WC_ADVANCED_MAPPINGS_EXPECTED_FIRST_UPDATE, testContext().get(WC_ADVANCED_MAPPINGS_EXPECTED_UPDATE));
+
+        final PutWorkingCapitalLoanProductsProductIdRequest secondUpdateRequest = buildAdvancedMappingsUpdateRequest();
+        final PutWorkingCapitalLoanProductsProductIdResponse response = ok(
+                () -> workingCapitalApi().updateWorkingCapitalLoanProduct(resourceId, secondUpdateRequest, Map.of()));
+
+        testContext().set(TestContextKey.WORKING_CAPITAL_LOAN_PRODUCT_UPDATE_RESPONSE, response);
+        testContext().set(TestContextKey.WORKING_CAPITAL_LOAN_PRODUCT_UPDATE_REQUEST, secondUpdateRequest);
+    }
+
     @Then("Working Capital Loan Product template has delinquencyStartTypeOptions containing:")
     public void verifyTemplateDelinquencyStartTypeOptions(final DataTable table) {
         final List<String> expectedOptions = table.asList();
@@ -1704,6 +1766,46 @@ public class WorkingCapitalStepDef extends AbstractStepDef {
         assertThat(template.getDelinquencyStartTypeOptions()).isNotNull().isNotEmpty();
         final List<String> actualCodes = template.getDelinquencyStartTypeOptions().stream().map(StringEnumOptionData::getCode).toList();
         assertThat(actualCodes).containsAll(expectedOptions);
+    }
+
+    @Then("Working Capital Loan Product template has advanced accounting options")
+    public void verifyTemplateAdvancedAccountingOptions() {
+        final GetWorkingCapitalLoanProductsTemplateResponse template = testContext()
+                .get(TestContextKey.WORKING_CAPITAL_LOAN_PRODUCT_TEMPLATE_RESPONSE);
+        WorkingCapitalLoanProductAdvancedAccountingTestHelper.assertTemplateHasOptions(template);
+    }
+
+    @Then("Working Capital Loan Product has advanced accounting mappings")
+    public void verifyProductHasAdvancedAccountingMappings() {
+        final GetWorkingCapitalLoanProductsProductIdResponse product = retrieveCreatedProduct();
+        final AdvancedAccountingExpectation expected = testContext().get().containsKey(WC_ADVANCED_MAPPINGS_EXPECTED_UPDATE)
+                ? testContext().get(WC_ADVANCED_MAPPINGS_EXPECTED_UPDATE)
+                : testContext().get(WC_ADVANCED_MAPPINGS_EXPECTED_CREATE);
+        WorkingCapitalLoanProductAdvancedAccountingTestHelper.assertProductHasExpectedAdvancedMappings(OBJECT_MAPPER, product, expected);
+    }
+
+    @Then("Working Capital Loan Product has latest advanced accounting mappings after second update")
+    public void verifyProductHasLatestAdvancedAccountingMappingsAfterSecondUpdate() {
+        final GetWorkingCapitalLoanProductsProductIdResponse product = retrieveCreatedProduct();
+        final AdvancedAccountingExpectation firstExpected = testContext().get(WC_ADVANCED_MAPPINGS_EXPECTED_FIRST_UPDATE);
+        final AdvancedAccountingExpectation secondExpected = testContext().get(WC_ADVANCED_MAPPINGS_EXPECTED_UPDATE);
+
+        WorkingCapitalLoanProductAdvancedAccountingTestHelper.assertProductHasExpectedAdvancedMappings(OBJECT_MAPPER, product,
+                secondExpected);
+        assertThat(secondExpected.feeChargeId()).as("Fee mapping charge should be replaced on second update")
+                .isNotEqualTo(firstExpected.feeChargeId());
+        assertThat(secondExpected.penaltyChargeId()).as("Penalty mapping charge should be replaced on second update")
+                .isNotEqualTo(firstExpected.penaltyChargeId());
+    }
+
+    private PutWorkingCapitalLoanProductsProductIdRequest buildAdvancedMappingsUpdateRequest() {
+        final PostWorkingCapitalLoanProductsRequest cashRequest = workingCapitalRequestFactory
+                .defaultWorkingCapitalLoanProductRequestWithCashAccounting();
+        final PutWorkingCapitalLoanProductsProductIdRequest updateRequest = buildCashBasedUpdateRequest(cashRequest);
+        final AdvancedAccountingExpectation expected = WorkingCapitalLoanProductAdvancedAccountingTestHelper
+                .prepareAdvancedMappings(updateRequest, paymentTypeResolver, fineractFeignClient);
+        testContext().set(WC_ADVANCED_MAPPINGS_EXPECTED_UPDATE, expected);
+        return updateRequest;
     }
 
 }

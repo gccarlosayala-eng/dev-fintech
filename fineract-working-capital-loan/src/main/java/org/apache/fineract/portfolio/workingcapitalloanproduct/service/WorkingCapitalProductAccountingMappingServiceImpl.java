@@ -53,6 +53,7 @@ public class WorkingCapitalProductAccountingMappingServiceImpl implements Workin
 
         if (accountingRuleType.isCashBased()) {
             this.mappingHelper.saveCashBasedAccountMapping(element, wcLoanProductId);
+            this.mappingHelper.saveAdvancedMappings(command, element, wcLoanProductId);
         }
     }
 
@@ -72,6 +73,7 @@ public class WorkingCapitalProductAccountingMappingServiceImpl implements Workin
         } else {
             if (accountingRuleType.isCashBased()) {
                 this.mappingHelper.handleChangesToCashBasedAccountMapping(wcLoanProductId, changes, element);
+                this.mappingHelper.updateAdvancedMappings(command, element, wcLoanProductId, changes);
             }
         }
         return changes;
