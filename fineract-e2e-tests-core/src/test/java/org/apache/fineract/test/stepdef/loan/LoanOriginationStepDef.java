@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.avro.loan.v1.LoanTransactionAdjustmentDataV1;
 import org.apache.fineract.avro.loan.v1.LoanTransactionDataV1;
@@ -62,14 +63,16 @@ import org.apache.fineract.test.factory.LoanRequestFactory;
 import org.apache.fineract.test.helper.ErrorMessageHelper;
 import org.apache.fineract.test.messaging.EventAssertion;
 import org.apache.fineract.test.messaging.event.loan.LoanApprovedEvent;
+import org.apache.fineract.test.messaging.event.loan.delinquency.LoanDelinquencyRangeChangeEvent;
+import org.apache.fineract.test.messaging.event.loan.repayment.LoanRepaymentDueEvent;
 import org.apache.fineract.test.messaging.event.loan.transaction.LoanAccrualTransactionCreatedBusinessEvent;
 import org.apache.fineract.test.messaging.event.loan.transaction.LoanAdjustTransactionBusinessEvent;
 import org.apache.fineract.test.messaging.store.EventStore;
 import org.apache.fineract.test.stepdef.AbstractStepDef;
 import org.apache.fineract.test.support.TestContextKey;
-import org.springframework.beans.factory.annotation.Autowired;
 
 @Slf4j
+@RequiredArgsConstructor
 public class LoanOriginationStepDef extends AbstractStepDef {
 
     private static final long NON_EXISTENT_ID = Long.MAX_VALUE;
@@ -78,20 +81,11 @@ public class LoanOriginationStepDef extends AbstractStepDef {
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern(DATE_FORMAT);
     private static final String ADJUSTED_TRANSACTION_ID = "adjustedTransactionId";
 
-    @Autowired
-    private FineractFeignClient fineractClient;
-
-    @Autowired
-    private LoanRequestFactory loanRequestFactory;
-
-    @Autowired
-    private EventAssertion eventAssertion;
-
-    @Autowired
-    private EventStore eventStore;
-
-    @Autowired
-    private ApiProperties apiProperties;
+    private final FineractFeignClient fineractClient;
+    private final LoanRequestFactory loanRequestFactory;
+    private final EventAssertion eventAssertion;
+    private final EventStore eventStore;
+    private final ApiProperties apiProperties;
 
     // --- Originator CRUD steps ---
 
@@ -742,6 +736,103 @@ public class LoanOriginationStepDef extends AbstractStepDef {
             case "newTransactionDetail" -> data.getNewTransactionDetail();
             default -> throw new IllegalArgumentException("Unknown adjustment field: " + field);
         };
+    }
+
+    @Then("LoanRepaymentDueBusinessEvent is created with originator details")
+    public void verifyOriginatorInRepaymentDueEvent() {
+        final long loanId = getLoanId();
+        final String expectedExternalId = testContext().get(TestContextKey.ORIGINATOR_EXTERNAL_ID);
+
+        eventAssertion.assertEvent(LoanRepaymentDueEvent.class, loanId).extractingData(loanRepaymentDueDataV1 -> {
+            final List<OriginatorDetailsV1> originators = loanRepaymentDueDataV1.getOriginators();
+            assertThat(originators).as("Originators in LoanRepaymentDueBusinessEvent").isNotNull().hasSize(1);
+            final OriginatorDetailsV1 originator = originators.getFirst();
+            assertThat(originator.getId()).as("Originator id in LoanRepaymentDueBusinessEvent").isNotNull();
+            assertThat(originator.getExternalId()).as("Originator externalId in LoanRepaymentDueBusinessEvent")
+                    .isEqualTo(expectedExternalId);
+            assertThat(originator.getStatus()).as("Originator status in LoanRepaymentDueBusinessEvent").isEqualTo("ACTIVE");
+            return (Long) loanRepaymentDueDataV1.getLoanId();
+        }).isEqualTo(loanId);
+        log.info("Verified originator {} in LoanRepaymentDueBusinessEvent for loan {}", expectedExternalId, loanId);
+    }
+
+    @Then("LoanRepaymentDueBusinessEvent is created without originator details")
+    public void verifyNoOriginatorInRepaymentDueEvent() {
+        final long loanId = getLoanId();
+
+        eventAssertion.assertEvent(LoanRepaymentDueEvent.class, loanId).extractingData(loanRepaymentDueDataV1 -> {
+            final List<OriginatorDetailsV1> originators = loanRepaymentDueDataV1.getOriginators();
+            assertThat(originators).as("Originators in LoanRepaymentDueBusinessEvent should be null or empty").isNullOrEmpty();
+            return (Long) loanRepaymentDueDataV1.getLoanId();
+        }).isEqualTo(loanId);
+        log.info("Verified no originators in LoanRepaymentDueBusinessEvent for loan {}", loanId);
+    }
+
+    @Then("LoanRepaymentDueBusinessEvent is created with {int} originator details")
+    public void verifyMultipleOriginatorsInRepaymentDueEvent(final int expectedCount) {
+        final long loanId = getLoanId();
+        final String expectedExternalId = testContext().get(TestContextKey.ORIGINATOR_EXTERNAL_ID);
+        final String expectedSecondExternalId = testContext().get(TestContextKey.ORIGINATOR_SECOND_EXTERNAL_ID);
+
+        eventAssertion.assertEvent(LoanRepaymentDueEvent.class, loanId).extractingData(loanRepaymentDueDataV1 -> {
+            final List<OriginatorDetailsV1> originators = loanRepaymentDueDataV1.getOriginators();
+            assertThat(originators).as("Originators in LoanRepaymentDueBusinessEvent should not be null or empty").isNotNull().isNotEmpty();
+            assertThat(originators).as("Originators count in LoanRepaymentDueBusinessEvent").hasSize(expectedCount);
+            assertThat(originators).extracting(OriginatorDetailsV1::getExternalId)
+                    .as("Originator externalIds in LoanRepaymentDueBusinessEvent")
+                    .containsExactlyInAnyOrder(expectedExternalId, expectedSecondExternalId);
+            return (Long) loanRepaymentDueDataV1.getLoanId();
+        }).isEqualTo(loanId);
+        log.info("Verified {} originators in LoanRepaymentDueBusinessEvent for loan {}", expectedCount, loanId);
+    }
+
+    @Then("LoanDelinquencyRangeChangeEvent is created with originator details")
+    public void verifyOriginatorInDelinquencyRangeEvent() {
+        final long loanId = getLoanId();
+        final String expectedExternalId = testContext().get(TestContextKey.ORIGINATOR_EXTERNAL_ID);
+
+        eventAssertion.assertEvent(LoanDelinquencyRangeChangeEvent.class, loanId).extractingData(loanAccountDelinquencyRangeDataV1 -> {
+            final List<OriginatorDetailsV1> originators = loanAccountDelinquencyRangeDataV1.getOriginators();
+            assertThat(originators).as("Originators in LoanDelinquencyRangeChangeEvent").isNotNull().hasSize(1);
+            final OriginatorDetailsV1 originator = originators.getFirst();
+            assertThat(originator.getId()).as("Originator id in LoanDelinquencyRangeChangeEvent").isNotNull();
+            assertThat(originator.getExternalId()).as("Originator externalId in LoanDelinquencyRangeChangeEvent")
+                    .isEqualTo(expectedExternalId);
+            assertThat(originator.getStatus()).as("Originator status in LoanDelinquencyRangeChangeEvent").isEqualTo("ACTIVE");
+            return loanAccountDelinquencyRangeDataV1.getLoanId();
+        }).isEqualTo(loanId);
+        log.info("Verified originator {} in LoanDelinquencyRangeChangeEvent for loan {}", expectedExternalId, loanId);
+    }
+
+    @Then("LoanDelinquencyRangeChangeEvent is created without originator details")
+    public void verifyNoOriginatorInDelinquencyRangeEvent() {
+        final long loanId = getLoanId();
+
+        eventAssertion.assertEvent(LoanDelinquencyRangeChangeEvent.class, loanId).extractingData(loanAccountDelinquencyRangeDataV1 -> {
+            final List<OriginatorDetailsV1> originators = loanAccountDelinquencyRangeDataV1.getOriginators();
+            assertThat(originators).as("Originators in LoanDelinquencyRangeChangeEvent should be null or empty").isNullOrEmpty();
+            return loanAccountDelinquencyRangeDataV1.getLoanId();
+        }).isEqualTo(loanId);
+        log.info("Verified no originators in LoanDelinquencyRangeChangeEvent for loan {}", loanId);
+    }
+
+    @Then("LoanDelinquencyRangeChangeEvent is created with {int} originator details")
+    public void verifyMultipleOriginatorsInDelinquencyRangeEvent(final int expectedCount) {
+        final long loanId = getLoanId();
+        final String expectedExternalId = testContext().get(TestContextKey.ORIGINATOR_EXTERNAL_ID);
+        final String expectedSecondExternalId = testContext().get(TestContextKey.ORIGINATOR_SECOND_EXTERNAL_ID);
+
+        eventAssertion.assertEvent(LoanDelinquencyRangeChangeEvent.class, loanId).extractingData(loanAccountDelinquencyRangeDataV1 -> {
+            final List<OriginatorDetailsV1> originators = loanAccountDelinquencyRangeDataV1.getOriginators();
+            assertThat(originators).as("Originators in LoanDelinquencyRangeChangeEvent should not be null or empty").isNotNull()
+                    .isNotEmpty();
+            assertThat(originators).as("Originators count in LoanDelinquencyRangeChangeEvent").hasSize(expectedCount);
+            assertThat(originators).extracting(OriginatorDetailsV1::getExternalId)
+                    .as("Originator externalIds in LoanDelinquencyRangeChangeEvent")
+                    .containsExactlyInAnyOrder(expectedExternalId, expectedSecondExternalId);
+            return loanAccountDelinquencyRangeDataV1.getLoanId();
+        }).isEqualTo(loanId);
+        log.info("Verified {} originators in LoanDelinquencyRangeChangeEvent for loan {}", expectedCount, loanId);
     }
 
     // --- Helper methods ---

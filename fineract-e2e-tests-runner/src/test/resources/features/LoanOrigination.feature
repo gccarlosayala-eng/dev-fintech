@@ -334,3 +334,75 @@ Feature: Loan Origination
     And Customer makes "AUTOPAY" repayment on "1 January 2025" with 500 EUR transaction amount
     When Customer adjusts the repayment on "1 January 2025" to 300 EUR without event check
     Then LoanAdjustTransactionBusinessEvent is created with originator details in "newTransactionDetail"
+
+  Scenario: Verify that originator details are present in LoanRepaymentDueBusinessEvent after inline COB runs
+    When Admin sets the business date to "01 January 2023"
+    When Admin creates a client with random data
+    When Admin creates a new loan originator with external ID and name "Repayment Due Originator"
+    When Admin creates a new Loan with date: "01 January 2023" and with 1 day loan term and repayment
+    When Admin attaches the originator to the loan
+    And Admin successfully approves the loan on "01 January 2023" with "1000" amount and expected disbursement date on "01 January 2023"
+    And Admin successfully disburse the loan on "01 January 2023" with "1000" EUR transaction amount
+    When Admin sets the business date to "02 January 2023"
+    When Admin runs inline COB job for Loan
+    Then LoanRepaymentDueBusinessEvent is created with originator details
+
+  Scenario: Verify no originator details in LoanRepaymentDueBusinessEvent when loan has no originator attached
+    When Admin sets the business date to "01 January 2023"
+    When Admin creates a client with random data
+    When Admin creates a new Loan with date: "01 January 2023" and with 1 day loan term and repayment
+    And Admin successfully approves the loan on "01 January 2023" with "1000" amount and expected disbursement date on "01 January 2023"
+    And Admin successfully disburse the loan on "01 January 2023" with "1000" EUR transaction amount
+    When Admin sets the business date to "02 January 2023"
+    When Admin runs inline COB job for Loan
+    Then LoanRepaymentDueBusinessEvent is created without originator details
+
+  Scenario: Verify multiple originator details in LoanRepaymentDueBusinessEvent after inline COB runs
+    When Admin sets the business date to "01 January 2023"
+    When Admin creates a client with random data
+    When Admin creates a new loan originator with external ID and name "Repayment Due First Originator"
+    When Admin creates a second loan originator with external ID and name "Repayment Due Second Originator"
+    When Admin creates a new Loan with date: "01 January 2023" and with 1 day loan term and repayment
+    When Admin attaches the originator to the loan
+    When Admin attaches the second originator to the loan
+    And Admin successfully approves the loan on "01 January 2023" with "1000" amount and expected disbursement date on "01 January 2023"
+    And Admin successfully disburse the loan on "01 January 2023" with "1000" EUR transaction amount
+    When Admin sets the business date to "02 January 2023"
+    When Admin runs inline COB job for Loan
+    Then LoanRepaymentDueBusinessEvent is created with 2 originator details
+
+  Scenario: Verify that originator details are present in LoanDelinquencyRangeChangeEvent when loan becomes delinquent
+    When Admin sets the business date to "01 January 2023"
+    When Admin creates a client with random data
+    When Admin creates a new loan originator with external ID and name "Delinquency Originator"
+    When Admin creates a new Loan with date: "01 January 2023" and with 1 day loan term and repayment
+    When Admin attaches the originator to the loan
+    And Admin successfully approves the loan on "01 January 2023" with "1000" amount and expected disbursement date on "01 January 2023"
+    When Admin successfully disburse the loan on "01 January 2023" with "1000" EUR transaction amount
+    When Admin sets the business date to "07 January 2023"
+    When Admin runs inline COB job for Loan
+    Then LoanDelinquencyRangeChangeEvent is created with originator details
+
+  Scenario: Verify no originator details in LoanDelinquencyRangeChangeEvent when loan has no originator attached
+    When Admin sets the business date to "01 January 2023"
+    When Admin creates a client with random data
+    When Admin creates a new Loan with date: "01 January 2023" and with 1 day loan term and repayment
+    And Admin successfully approves the loan on "01 January 2023" with "1000" amount and expected disbursement date on "01 January 2023"
+    When Admin successfully disburse the loan on "01 January 2023" with "1000" EUR transaction amount
+    When Admin sets the business date to "07 January 2023"
+    When Admin runs inline COB job for Loan
+    Then LoanDelinquencyRangeChangeEvent is created without originator details
+
+  Scenario: Verify multiple originator details in LoanDelinquencyRangeChangeEvent when loan becomes delinquent
+    When Admin sets the business date to "01 January 2023"
+    When Admin creates a client with random data
+    When Admin creates a new loan originator with external ID and name "Delinquency First Originator"
+    When Admin creates a second loan originator with external ID and name "Delinquency Second Originator"
+    When Admin creates a new Loan with date: "01 January 2023" and with 1 day loan term and repayment
+    When Admin attaches the originator to the loan
+    When Admin attaches the second originator to the loan
+    And Admin successfully approves the loan on "01 January 2023" with "1000" amount and expected disbursement date on "01 January 2023"
+    When Admin successfully disburse the loan on "01 January 2023" with "1000" EUR transaction amount
+    When Admin sets the business date to "07 January 2023"
+    When Admin runs inline COB job for Loan
+    Then LoanDelinquencyRangeChangeEvent is created with 2 originator details
