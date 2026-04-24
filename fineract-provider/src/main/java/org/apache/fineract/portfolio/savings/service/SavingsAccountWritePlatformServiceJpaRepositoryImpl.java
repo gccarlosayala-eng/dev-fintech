@@ -543,7 +543,8 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
     public CommandProcessingResult postInterest(final JsonCommand command) {
         Long savingsId = command.getSavingsId();
         this.savingsAccountTransactionDataValidator.validatePostInterest(command);
-        final boolean postInterestAs = command.booleanPrimitiveValueOfParameterNamed("isPostInterestAsOn");
+        final boolean postInterestAs = command.booleanPrimitiveValueOfParameterNamed("isPostInterestAsOn")
+                || command.booleanPrimitiveValueOfParameterNamed("postInterestManualOrAutomatic");
         final LocalDate transactionDate = command.localDateValueOfParameterNamed("transactionDate");
         final ExternalId externalId = this.externalIdFactory.createFromCommand(command, SavingsApiConstants.externalIdParamName);
 

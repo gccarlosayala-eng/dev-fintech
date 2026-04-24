@@ -67,17 +67,24 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class SavingsAccountTransactionDataValidator {
 
+    private static final String IS_BULK_PARAM_NAME = "isBulk";
     private static final String IS_POST_INTEREST_AS_ON_PARAM_NAME = "isPostInterestAsOn";
+    private static final String POST_INTEREST_MANUAL_OR_AUTOMATIC_PARAM_NAME = "postInterestManualOrAutomatic";
     private final FromJsonHelper fromApiJsonHelper;
     private static final Set<String> SAVINGS_ACCOUNT_HOLD_AMOUNT_REQUEST_DATA_PARAMETERS = new HashSet<>(
             Arrays.asList(transactionDateParamName, SavingsApiConstants.dateFormatParamName, SavingsApiConstants.localeParamName,
                     transactionAmountParamName, externalIdParamName, lienAllowedParamName, SavingsApiConstants.reasonForBlockParamName));
-    private static final Set<String> SAVINGS_ACCOUNT_RELEASE_AMOUNT_REQUEST_DATA_PARAMETERS = new HashSet<>(
-            Arrays.asList(externalIdParamName));
+    private static final Set<String> SAVINGS_ACCOUNT_RELEASE_AMOUNT_REQUEST_DATA_PARAMETERS = createReleaseAmountRequestDataParameters();
     private static final Set<String> SAVINGS_ACCOUNT_POST_INTEREST_REQUEST_DATA_PARAMETERS = new HashSet<>(
             Arrays.asList(SavingsApiConstants.dateFormatParamName, SavingsApiConstants.localeParamName, transactionDateParamName,
-                    externalIdParamName, IS_POST_INTEREST_AS_ON_PARAM_NAME));
+                    externalIdParamName, IS_POST_INTEREST_AS_ON_PARAM_NAME, POST_INTEREST_MANUAL_OR_AUTOMATIC_PARAM_NAME));
     private final ConfigurationDomainService configurationDomainService;
+
+    private static Set<String> createReleaseAmountRequestDataParameters() {
+        final Set<String> requestDataParameters = new HashSet<>(SavingsAccountConstant.SAVINGS_ACCOUNT_TRANSACTION_REQUEST_DATA_PARAMETERS);
+        requestDataParameters.add(IS_BULK_PARAM_NAME);
+        return requestDataParameters;
+    }
 
     public void validateTransactionWithPivotDate(final LocalDate transactionDate, final SavingsAccount savingsAccount) {
         final boolean backdatedTxnsAllowedTill = this.configurationDomainService.retrievePivotDateConfig();
@@ -371,6 +378,12 @@ public class SavingsAccountTransactionDataValidator {
             final Boolean isPostInterestAsOn = this.fromApiJsonHelper.extractBooleanNamed(IS_POST_INTEREST_AS_ON_PARAM_NAME, element);
             baseDataValidator.reset().parameter(IS_POST_INTEREST_AS_ON_PARAM_NAME).value(isPostInterestAsOn).isOneOfTheseValues(true,
                     false);
+        }
+        if (this.fromApiJsonHelper.parameterExists(POST_INTEREST_MANUAL_OR_AUTOMATIC_PARAM_NAME, element)) {
+            final Boolean postInterestManualOrAutomatic = this.fromApiJsonHelper
+                    .extractBooleanNamed(POST_INTEREST_MANUAL_OR_AUTOMATIC_PARAM_NAME, element);
+            baseDataValidator.reset().parameter(POST_INTEREST_MANUAL_OR_AUTOMATIC_PARAM_NAME).value(postInterestManualOrAutomatic)
+                    .isOneOfTheseValues(true, false);
         }
 
         throwExceptionIfValidationWarningsExist(dataValidationErrors);

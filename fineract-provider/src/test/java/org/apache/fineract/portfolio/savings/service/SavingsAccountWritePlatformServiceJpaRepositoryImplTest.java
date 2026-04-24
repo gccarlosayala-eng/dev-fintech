@@ -44,6 +44,7 @@ import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDoma
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.domain.ExternalId;
+import org.apache.fineract.infrastructure.core.domain.FineractPlatformTenant;
 import org.apache.fineract.infrastructure.core.exception.ErrorHandler;
 import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
 import org.apache.fineract.infrastructure.core.service.ExternalIdFactory;
@@ -53,6 +54,7 @@ import org.apache.fineract.infrastructure.event.business.service.BusinessEventNo
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.organisation.holiday.domain.HolidayRepositoryWrapper;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
+import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
 import org.apache.fineract.organisation.staff.domain.StaffRepositoryWrapper;
 import org.apache.fineract.organisation.workingdays.domain.WorkingDaysRepositoryWrapper;
 import org.apache.fineract.portfolio.account.domain.StandingInstructionRepository;
@@ -76,6 +78,7 @@ import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransactionRep
 import org.apache.fineract.portfolio.savings.exception.SavingsAccountTransactionNotFoundException;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.apache.fineract.useradministration.domain.AppUserRepositoryWrapper;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -157,6 +160,12 @@ class SavingsAccountWritePlatformServiceJpaRepositoryImplTest {
         validateTransactionsForTransfer = SavingsAccountWritePlatformServiceJpaRepositoryImpl.class
                 .getDeclaredMethod("validateTransactionsForTransfer", SavingsAccount.class, LocalDate.class);
         validateTransactionsForTransfer.setAccessible(true);
+    }
+
+    @AfterEach
+    void tearDown() {
+        ThreadLocalContextUtil.reset();
+        MoneyHelper.clearCache();
     }
 
     @Test
@@ -241,6 +250,8 @@ class SavingsAccountWritePlatformServiceJpaRepositoryImplTest {
         BigDecimal amount = BigDecimal.TEN;
         ExternalId externalId = new ExternalId("hold-external-id");
 
+        setupTenantContext(transactionDate);
+
         AppUser submittedBy = mock(AppUser.class);
         JsonCommand command = mock(JsonCommand.class);
         SavingsAccount account = mock(SavingsAccount.class);
@@ -280,6 +291,8 @@ class SavingsAccountWritePlatformServiceJpaRepositoryImplTest {
         Long holdTransactionId = 7L;
         LocalDate transactionDate = LocalDate.of(2024, 4, 3);
         ExternalId externalId = new ExternalId("release-external-id");
+
+        setupTenantContext(transactionDate);
 
         JsonCommand command = mock(JsonCommand.class);
         SavingsAccount account = mock(SavingsAccount.class);
@@ -334,6 +347,8 @@ class SavingsAccountWritePlatformServiceJpaRepositoryImplTest {
         LocalDate transactionDate = LocalDate.of(2024, 4, 5);
         ExternalId externalId = new ExternalId("interest-posting-external-id");
 
+        setupTenantContext(transactionDate);
+
         JsonCommand command = mock(JsonCommand.class);
         SavingsAccount account = mock(SavingsAccount.class);
         SavingsAccountTransaction postingTransaction = mock(SavingsAccountTransaction.class);
@@ -377,6 +392,12 @@ class SavingsAccountWritePlatformServiceJpaRepositoryImplTest {
         verify(savingsAccountTransactionDataValidator).validatePostInterest(command);
         verify(postingTransaction).updateExternalId(externalId);
         verify(savingsAccountTransactionRepository).save(postingTransaction);
+    }
+
+    private void setupTenantContext(final LocalDate businessDate) {
+        ThreadLocalContextUtil.setTenant(new FineractPlatformTenant(1L, "test", "Test Tenant", "UTC", null));
+        MoneyHelper.initializeTenantRoundingMode("test", 6);
+        ThreadLocalContextUtil.setBusinessDates(new HashMap<>(Map.of(BusinessDateType.BUSINESS_DATE, businessDate)));
     }
 
     @Test
