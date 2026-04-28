@@ -1,9 +1,7 @@
 name: Regression Safety - Database Changes
 
 on:
-  pull_request:
-    paths:
-      - '**/db/changelog/**'
+  workflow_call:
 
 permissions:
   contents: read
@@ -11,30 +9,39 @@ permissions:
 jobs:
   detect-db-changes:
     runs-on: ubuntu-24.04
-    timeout-minutes: 2
+    timeout-minutes: 5
     outputs:
       has_liquibase_changes: ${{ steps.check.outputs.has_changes }}
     steps:
-      - name: Checkout PR
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Download workspace
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
         with:
-          fetch-depth: 0
+          name: fineract-workspace-${{ github.run_id }}
+          path: .
 
-      - name: Fetch base branch
-        run: git fetch origin ${{ github.event.pull_request.base.ref }}
+      - name: Extract workspace
+        run: tar -xf fineract-workspace.tar
 
       - name: Detect Liquibase changes
         id: check
         run: |
-          MERGE_BASE=$(git merge-base origin/${{ github.event.pull_request.base.ref }} ${{ github.event.pull_request.head.sha }})
-          CHANGES=$(git diff --name-only "$MERGE_BASE".."${{ github.event.pull_request.head.sha }}" -- '**/db/changelog/**/*.xml' || true)
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+            echo "Not a pull request event."
+            exit 0
+          fi
+
+          git fetch origin "${{ github.event.pull_request.base.ref }}" --no-tags
+          MERGE_BASE=$(git merge-base "origin/${{ github.event.pull_request.base.ref }}" HEAD)
+          CHANGES=$(git diff --name-only "$MERGE_BASE"..HEAD -- '**/db/changelog/**/*.xml' || true)
+
           if [ -n "$CHANGES" ]; then
-            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
             echo "Liquibase changes detected:"
             echo "$CHANGES"
           else
-            echo "has_changes=false" >> $GITHUB_OUTPUT
-            echo "No Liquibase changes detected — Instance #2 (hybrid) will be skipped."
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+            echo "No Liquibase changes detected."
           fi
 
   regression-safety:
@@ -94,18 +101,20 @@ jobs:
           fetch-depth: 0
           path: baseline
 
-      - name: Checkout PR merge commit (current)
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          ref: ${{ github.sha }}
-          fetch-depth: 0
-          path: current
-
       - name: Set up JDK 21
         uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5
         with:
           distribution: 'zulu'
           java-version: '21'
+
+      - name: Download workspace
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: fineract-workspace-${{ github.run_id }}
+          path: .
+
+      - name: Extract workspace
+        run: tar -xf fineract-workspace.tar
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
@@ -123,8 +132,8 @@ jobs:
           git -C baseline rev-parse HEAD
           git -C baseline log -1 --oneline
           echo "PR revision:"
-          git -C current rev-parse HEAD
-          git -C current log -1 --oneline
+          git rev-parse HEAD
+          git log -1 --oneline
 
       # ============================================================
       # INSTANCE #1: BASELINE (develop code + fresh DB)
@@ -169,11 +178,10 @@ jobs:
       - name: "Instance #1: Run regression safety E2E test"
         id: instance1
         continue-on-error: true
-        working-directory: current
         run: |
           ./gradlew --no-daemon --console=plain \
             :fineract-e2e-tests-runner:cucumber \
-            -Pcucumber.features="src/test/resources/features/LoanRegressionSafety.feature" \
+            -Pcucumber.tags="@RegressionSafety" \
             -x spotlessCheck
 
       - name: "Instance #1: Stop backend"
@@ -202,7 +210,6 @@ jobs:
             -c "CREATE DATABASE $DB_NAME;"
 
       - name: "Instance #2: Apply PR Liquibase migrations (schema only)"
-        working-directory: current
         run: |
           echo "Applying all Liquibase changesets (base + PR) using PR code..."
           # The liquibase-only profile sets web-application-type=none, so Spring Boot
@@ -266,11 +273,10 @@ jobs:
       - name: "Instance #2: Run regression safety E2E test"
         id: instance2
         continue-on-error: true
-        working-directory: current
         run: |
           ./gradlew --no-daemon --console=plain \
             :fineract-e2e-tests-runner:cucumber \
-            -Pcucumber.features="src/test/resources/features/LoanRegressionSafety.feature" \
+            -Pcucumber.tags="@RegressionSafety" \
             -x spotlessCheck
 
       - name: "Instance #2: Stop backend"
@@ -298,7 +304,6 @@ jobs:
             -c "CREATE DATABASE $DB_NAME;"
 
       - name: "Instance #3: Start PR backend"
-        working-directory: current
         run: |
           ./gradlew :fineract-provider:devRun --args="${DEVRUN_ARGS}" &
           BACKEND_PID=$!
@@ -330,16 +335,14 @@ jobs:
       - name: "Instance #3: Run regression safety E2E test"
         id: instance3
         continue-on-error: true
-        working-directory: current
         run: |
           ./gradlew --no-daemon --console=plain \
             :fineract-e2e-tests-runner:cucumber \
-            -Pcucumber.features="src/test/resources/features/LoanRegressionSafety.feature" \
+            -Pcucumber.tags="@RegressionSafety" \
             -x spotlessCheck
 
       - name: "Instance #3: Stop backend"
         if: always()
-        working-directory: current
         run: |
           kill $(cat backend.pid) 2>/dev/null || true
           sleep 10
@@ -379,8 +382,8 @@ jobs:
         with:
           name: regression-safety-results
           path: |
-            current/fineract-e2e-tests-runner/build/reports/
-          retention-days: 15
+            fineract-e2e-tests-runner/build/reports/
+          retention-days: 1
 
       - name: Fail if any instance failed
         if: always()
