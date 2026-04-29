@@ -23,3 +23,42 @@ Feature: WorkingCapitalLoanProductAdvancedAccounting
     And Admin updates Working Capital Loan Product with advanced mappings twice
     Then Working Capital Loan Product has latest advanced accounting mappings after second update
 
+  @TestRailId:C78827
+  Scenario: Verify validation error when paymentTypeId is null in payment channel mappings
+    When Admin attempts to create Working Capital Loan Product with null paymentTypeId in payment channel mappings
+    Then Admin gets validation error with status code 400 and message "paymentTypeId is mandatory"
+
+  @TestRailId:C78828
+  Scenario: Verify validation error when fundSourceAccountId is null in payment channel mappings
+    When Admin attempts to create Working Capital Loan Product with null fundSourceAccountId in payment channel mappings
+    Then Admin gets validation error with status code 400 and message "fundSourceAccountId is mandatory"
+
+  @TestRailId:C78829
+  Scenario: Verify validation error when chargeOffReasonCodeValueId is null in charge-off mappings
+    When Admin attempts to create Working Capital Loan Product with null chargeOffReasonCodeValueId in charge-off mappings
+    Then Admin gets validation error with status code 400 and message "chargeOffReasonCodeValueId is mandatory"
+
+  @TestRailId:C78830
+  Scenario: Verify validation error when expenseAccountId is null in charge-off mappings
+    When Admin attempts to create Working Capital Loan Product with null expenseAccountId in charge-off mappings
+    Then Admin gets validation error with status code 400 and message "expenseGlAccountId is mandatory"
+
+  @TestRailId:C78831
+  Scenario: Verify validation error when writeOffReasonCodeValueId is null in write-off mappings
+    When Admin attempts to create Working Capital Loan Product with null writeOffReasonCodeValueId in write-off mappings
+    Then Admin gets validation error with status code 400 and message "writeOffReasonCodeValueId is mandatory"
+
+  @TestRailId:C78832
+  Scenario: Verify validation error when expenseAccountId is null in write-off mappings
+    When Admin attempts to create Working Capital Loan Product with null expenseAccountId in write-off mappings
+    Then Admin gets validation error with status code 400 and message "expenseGlAccountId is mandatory"
+
+  @TestRailId:C78833
+  Scenario: Verify validation error when duplicate paymentTypeId exists in payment channel mappings
+    When Admin attempts to create Working Capital Loan Product with duplicate paymentTypeId in payment channel mappings
+    Then Admin gets validation error with status code 400 and message "Duplicated entry for paymentChannelToFundSourceMappings.paymentTypeId"
+
+  @TestRailId:C78835
+  Scenario: Verify successful creation with unique payment channel mappings, multiple elements
+    When Admin creates Working Capital Loan Product with unique payment channel mappings
+    Then Working Capital Loan Product is created successfully with two payment channel mappings
