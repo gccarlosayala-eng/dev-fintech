@@ -36,6 +36,7 @@ import io.cucumber.java.en.When;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -817,29 +818,15 @@ public class WorkingCapitalLoanAccountStepDef extends AbstractStepDef {
     @When("Admin failed to disburse the working capital loan on {string} with {string} amount with {string} exceeded discount amount")
     public void disburseWorkingCapitalLoanWithExceededDiscountFailure(String actualDisbursementDate, String transactionAmount,
             String discountAmount) {
-        PostWorkingCapitalLoansLoanIdRequest disburseRequest = workingCapitalLoanRequestFactory.defaultWorkingCapitalLoanDisburseRequest()
-                .actualDisbursementDate(actualDisbursementDate)//
-                .discountAmount(new BigDecimal(discountAmount)).transactionAmount(new BigDecimal(transactionAmount));
-
-        final CallFailedRuntimeException exception = fail(() -> fineractClient.workingCapitalLoans()
-                .stateTransitionWorkingCapitalLoanById(getCreatedLoanId(), "disburse", disburseRequest));
-
-        assertThat(exception.getStatus()).as(ErrorMessageHelper.discountAmountExceedFailure()).isEqualTo(400);
-        assertThat(exception.getDeveloperMessage()).contains(ErrorMessageHelper.discountAmountExceedFailure());
+        String errorMessage = ErrorMessageHelper.discountAmountExceedFailure();
+        disburseWorkingCapitalLoanFailure(actualDisbursementDate, transactionAmount, discountAmount, errorMessage);
     }
 
     @When("Admin failed to disburse the working capital loan on {string} with {string} amount with {string} discount amount due to override disallowed by product")
     public void disburseWorkingCapitalLoanWithDiscountOverrideDisallowedFailure(final String actualDisbursementDate,
             final String transactionAmount, final String discountAmount) {
-        final PostWorkingCapitalLoansLoanIdRequest disburseRequest = workingCapitalLoanRequestFactory
-                .defaultWorkingCapitalLoanDisburseRequest().actualDisbursementDate(actualDisbursementDate)//
-                .discountAmount(new BigDecimal(discountAmount)).transactionAmount(new BigDecimal(transactionAmount));
-
-        final CallFailedRuntimeException exception = fail(() -> fineractClient.workingCapitalLoans()
-                .stateTransitionWorkingCapitalLoanById(getCreatedLoanId(), "disburse", disburseRequest));
-
-        assertThat(exception.getStatus()).as(ErrorMessageHelper.overrideDisallowedByProductFailure()).isEqualTo(400);
-        assertThat(exception.getDeveloperMessage()).contains(ErrorMessageHelper.overrideDisallowedByProductFailure());
+        String errorMessage = ErrorMessageHelper.overrideDisallowedByProductFailure();
+        disburseWorkingCapitalLoanFailure(actualDisbursementDate, transactionAmount, discountAmount, errorMessage);
     }
 
     @Then("Verify Working Capital loan disbursement was successful")
@@ -969,14 +956,8 @@ public class WorkingCapitalLoanAccountStepDef extends AbstractStepDef {
         assertThat(exception.getDeveloperMessage()).contains(ErrorMessageHelper.undoDisbursalDisallowedFailure(actualLoanStatus));
     }
 
-    @And("Update discount with {string} amount on Working Capital loan account failed due to already added discount before disbursement")
-    public void updateDiscountWCLoanAlreadyAddedFailure(String discountAmount) {
-        String errorMessage = ErrorMessageHelper.discountAlreadySetBeforeDisburseFailure();
-        updateDiscountFailedCheck(discountAmount, errorMessage);
-    }
-
-    @And("Discount with {string} amount on Working Capital loan account for last disbursement")
-    public void updateDiscountWCLoanDisbursement(String discountAmount) {
+    @And("Admin adds Discount fee with {string} amount on Working Capital loan account for last disbursement")
+    public void addDiscountFeeWCLoanDisbursement(String discountAmount) {
         PostWorkingCapitalLoansLoanIdResponse lastDisbursementResponse = testContext().get(TestContextKey.LOAN_DISBURSE_RESPONSE);
 
         final PostWorkingCapitalLoansLoanIdRequest request = workingCapitalLoanRequestFactory.defaultWorkingCapitalLoanDiscountFeeRequest() //
@@ -985,22 +966,35 @@ public class WorkingCapitalLoanAccountStepDef extends AbstractStepDef {
         executeStateTransition("DISCOUNTFEE", request, "DISCOUNT", false);
     }
 
-    @And("Update discount with {string} amount on Working Capital loan account failed due to date diff from disbursement date")
-    public void updateDiscountWCLoanDiffFromDisburseDateFailure(String discountAmount) {
+    @And("Add Discount fee with {string} amount on Working Capital loan account failed due to already added discount before disbursement")
+    public void addDiscountFeeWCLoanAlreadyAddedFailure(String discountAmount) {
+        String errorMessage = ErrorMessageHelper.discountAlreadySetBeforeDisburseFailure();
+        addDiscountFeeFailedCheck(discountAmount, errorMessage);
+    }
+
+    @And("Add Discount fee with {string} amount on Working Capital loan account failed due to date diff from disbursement date")
+    public void addDiscountFeeWCLoanDiffFromDisburseDateFailure(String discountAmount) {
         String errorMessage = ErrorMessageHelper.discountDiffDateFromDisburseFailure();
-        updateDiscountFailedCheck(discountAmount, errorMessage);
+        addDiscountFeeFailedCheck(discountAmount, errorMessage);
     }
 
-    @And("Update discount with {string} amount on Working Capital loan account failed due to override disallowed by product")
-    public void updateDiscountWCLoanOverrideDisallowedByProductFailure(String discountAmount) {
+    @And("Add Discount fee with {string} amount on Working Capital loan account failed due to override disallowed by product")
+    public void addDiscountFeeWCLoanOverrideDisallowedByProductFailure(String discountAmount) {
         String errorMessage = ErrorMessageHelper.overrideDisallowedByProductFailure();
-        updateDiscountFailedCheck(discountAmount, errorMessage);
+        addDiscountFeeFailedCheck(discountAmount, errorMessage);
     }
 
-    @And("Update discount with {string} amount on Working Capital loan account failed due to exceed discount amount")
-    public void updateDiscountWCLoanExceedDiscountAmountProductFailure(String discountAmount) {
+    @And("Add Discount fee with {string} amount on Working Capital loan account failed due to exceed discount amount")
+    public void addDiscountFeeWCLoanExceedDiscountAmountProductFailure(String discountAmount) {
         String errorMessage = ErrorMessageHelper.discountExceedCreatedDiscountFailure();
-        updateDiscountFailedCheck(discountAmount, errorMessage);
+        addDiscountFeeFailedCheck(discountAmount, errorMessage);
+    }
+
+    @And("Working Capital Loan has transactions:")
+    public void workingCapitalLoanHasTransactions(final DataTable dataTable) throws InvocationTargetException, IllegalAccessException {
+        GetWorkingCapitalLoansLoanIdResponse getWorkingCapitalLoansLoanIdResponse = retrieveLoanDetails(getCreatedLoanId());
+        List<GetWorkingCapitalLoanTransactionIdResponse> actualTransactions = getWorkingCapitalLoansLoanIdResponse.getTransactions();
+        assertTable(GetWorkingCapitalLoanTransactionIdResponse.class, dataTable, actualTransactions);
     }
 
     // ====================================
@@ -1085,7 +1079,7 @@ public class WorkingCapitalLoanAccountStepDef extends AbstractStepDef {
         testContext().set(responseKey, response);
     }
 
-    public void updateDiscountFailedCheck(String discountAmount, String errorMessage) {
+    public void addDiscountFeeFailedCheck(String discountAmount, String errorMessage) {
         final PostWorkingCapitalLoansResponse loanResponse = testContext().get(TestContextKey.LOAN_CREATE_RESPONSE);
         Assertions.assertNotNull(loanResponse);
         Assertions.assertNotNull(loanResponse.getLoanId());
@@ -1291,6 +1285,19 @@ public class WorkingCapitalLoanAccountStepDef extends AbstractStepDef {
         CallFailedRuntimeException exception = fail(() -> fineractClient.workingCapitalLoans().stateTransitionWorkingCapitalLoanById(loanId,
                 disburseRequest, Map.of("command", "disburse")));
         assertThat(exception.getStatus()).as(errorMessage).isEqualTo(errorCode);
+        assertThat(exception.getDeveloperMessage()).contains(errorMessage);
+    }
+
+    public void disburseWorkingCapitalLoanFailure(String actualDisbursementDate, String transactionAmount, String discountAmount,
+            String errorMessage) {
+        PostWorkingCapitalLoansLoanIdRequest disburseRequest = workingCapitalLoanRequestFactory.defaultWorkingCapitalLoanDisburseRequest()
+                .actualDisbursementDate(actualDisbursementDate)//
+                .discountAmount(new BigDecimal(discountAmount)).transactionAmount(new BigDecimal(transactionAmount));
+
+        final CallFailedRuntimeException exception = fail(() -> fineractClient.workingCapitalLoans()
+                .stateTransitionWorkingCapitalLoanById(getCreatedLoanId(), "disburse", disburseRequest));
+
+        assertThat(exception.getStatus()).as(errorMessage).isEqualTo(400);
         assertThat(exception.getDeveloperMessage()).contains(errorMessage);
     }
 
@@ -2484,18 +2491,12 @@ public class WorkingCapitalLoanAccountStepDef extends AbstractStepDef {
                     Assertions.assertEquals(Double.parseDouble(expected), ((BigDecimal) actual).doubleValue(), message);
                 } else if (actual instanceof LoanTransactionEnumData) {
                     Assertions.assertEquals(expected, ((LoanTransactionEnumData) actual).getValue(), message);
+                } else if (actual instanceof LocalDate) {
+                    Assertions.assertEquals(expected, FORMATTER.format((LocalDate) actual), message);
                 } else {
                     Assertions.assertEquals(expectedValues.get(iM), actual == null ? null : actual.toString(), message);
                 }
             }
         }
-    }
-
-    @And("Working Capital Loan has transactions:")
-    public void workingCapitalLoanHasTransactions(final DataTable dataTable) throws InvocationTargetException, IllegalAccessException {
-        // Write code here that turns the phrase above into concrete actions
-        GetWorkingCapitalLoansLoanIdResponse getWorkingCapitalLoansLoanIdResponse = retrieveLoanDetails(getCreatedLoanId());
-        List<GetWorkingCapitalLoanTransactionIdResponse> actualTransactions = getWorkingCapitalLoansLoanIdResponse.getTransactions();
-        assertTable(GetWorkingCapitalLoanTransactionIdResponse.class, dataTable, actualTransactions);
     }
 }
