@@ -108,17 +108,6 @@ public class WorkingCapitalBreachConfigStepDef extends AbstractStepDef {
         checkBreachData(request, data);
     }
 
-    /*
-     * @Then("Get Breach has the following values") public void getBreachHasTheFollowingValues() { final Long id =
-     * TestContext.INSTANCE.get(TestContextKey.WORKING_CAPITAL_BREACH_ID); final WorkingCapitalBreachData data = ok(()
-     * -> fineractFeignClient.workingCapitalBreaches().retrieveWorkingCapitalBreach(id)); // final
-     * WorkingCapitalBreachTemplateResponse template = ok( // () ->
-     * fineractFeignClient.workingCapitalBreaches().retrieveWorkingCapitalBreachTemplate());
-     * assertThat(data).isNotNull(); /// assertThat(template).isNotNull(); //
-     * assertThat(template.getBreachFrequencyTypeOptions()).isNotNull().isNotEmpty();
-     * //assertThat(template.getBreachAmountCalculationTypeOptions()).isNotNull().isNotEmpty(); }
-     */
-
     @When("Admin modifies WC Breach With Values")
     public void adminModifiesWCBreachWithValues() {
         final Long id = TestContext.INSTANCE.get(TestContextKey.WORKING_CAPITAL_BREACH_ID);
@@ -233,9 +222,22 @@ public class WorkingCapitalBreachConfigStepDef extends AbstractStepDef {
         assertThat(exception.getDeveloperMessage()).contains(ErrorMessageHelper.workingCapitalBreachNotFoundFailure(id));
     }
 
+    public void deleteWCBreachAssignedToLoanEntityFailure(Long id, String errorCode, String errorMessage) {
+        // final Long id = TestContext.INSTANCE.get(TestContextKey.WORKING_CAPITAL_BREACH_ID);
+        final CallFailedRuntimeException exception = fail(
+                () -> fineractFeignClient.workingCapitalBreaches().deleteWorkingCapitalBreach(id));
+
+        assertThat(exception.getStatus()).as(ErrorMessageHelper.incorrectExpectedValueInResponse()).isEqualTo(403);
+        assertThat(exception.getUserMessageGlobalisationCode()).isEqualTo(errorCode);
+        assertThat(exception.getDeveloperMessage()) //
+                .contains(errorMessage) //
+                .doesNotContain("Cannot delete or update a parent row") //
+                .doesNotContain("m_wc_loan_product");
+    }
+
     @Then("Admin failed to delete WC Breach that is assigned to a Working Capital Loan Product")
     public void adminFailedToDeleteWCBreachAssignedToLoanProduct() {
-        final Long id = TestContext.GLOBAL.get(TestContextKey.WORKING_CAPITAL_BREACH_ID);
+        final Long id = TestContext.INSTANCE.get(TestContextKey.WORKING_CAPITAL_BREACH_ID);
         final CallFailedRuntimeException exception = fail(
                 () -> fineractFeignClient.workingCapitalBreaches().deleteWorkingCapitalBreach(id));
 
@@ -245,6 +247,17 @@ public class WorkingCapitalBreachConfigStepDef extends AbstractStepDef {
                 .contains(ErrorMessageHelper.workingCapitalBreachLinkedToLoanProductFailure(id)) //
                 .doesNotContain("Cannot delete or update a parent row") //
                 .doesNotContain("m_wc_loan_product");
+    }
+
+    @Then("Admin failed to delete WC Breach that is assigned to a Working Capital Loan Account")
+    public void adminFailedToDeleteWCBreachAssignedToLoanAccount() {
+        final Long id = TestContext.INSTANCE.get(TestContextKey.WORKING_CAPITAL_BREACH_ID);
+        String errorMessage = "The request caused a data integrity issue to be fired by the database.";
+        final CallFailedRuntimeException exception = fail(
+                () -> fineractFeignClient.workingCapitalBreaches().deleteWorkingCapitalBreach(id));
+        assertThat(exception.getStatus()).isEqualTo(403);
+        assertThat(exception.getMessage()).contains(errorMessage);
+
     }
 
     private void checkRetrieveWCBreachNotFoundFailure(final Long id) {

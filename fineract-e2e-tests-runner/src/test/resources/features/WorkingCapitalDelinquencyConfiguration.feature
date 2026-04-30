@@ -71,6 +71,7 @@ Feature: Working Capital Delinquency Configuration
       | 565465                         |
       | 0                              |
 
+  @TestRailId:C78841
   Scenario: Verify deleting WC Delinquency Bucket assigned to a Working Capital Loan Product is rejected with entity-linked error
     When Admin creates WC Delinquency Bucket With Values
     When Admin creates a new Working Capital Loan Product with existing WC Delinquency Bucket

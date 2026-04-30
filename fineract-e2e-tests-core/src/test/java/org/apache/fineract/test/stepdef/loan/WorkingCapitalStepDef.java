@@ -426,7 +426,7 @@ public class WorkingCapitalStepDef extends AbstractStepDef {
 
     @When("Admin creates a new Working Capital Loan Product with existing WC Breach")
     public void createWorkingCapitalLoanProductWithExistingBreach() {
-        final Long breachId = TestContext.GLOBAL.get(TestContextKey.WORKING_CAPITAL_BREACH_ID);
+        final Long breachId = TestContext.INSTANCE.get(TestContextKey.WORKING_CAPITAL_BREACH_ID);
         final String name = DefaultWorkingCapitalLoanProduct.WCLP.getName() + Utils.randomStringGenerator("_", 10);
         final PostWorkingCapitalLoanProductsRequest request = workingCapitalRequestFactory.defaultWorkingCapitalLoanProductRequest() //
                 .name(name) //
