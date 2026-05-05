@@ -310,6 +310,16 @@ public class ExternalEventConfigurationHelper {
         loanTransactionMakeRepaymentPreBusinessEvent.put("enabled", false);
         defaults.add(loanTransactionMakeRepaymentPreBusinessEvent);
 
+        Map<String, Object> wcLoanTransactionMakeRepaymentBusinessEvent = new HashMap<>();
+        wcLoanTransactionMakeRepaymentBusinessEvent.put("type", "WorkingCapitalLoanRepaymentTransactionBusinessEvent");
+        wcLoanTransactionMakeRepaymentBusinessEvent.put("enabled", false);
+        defaults.add(wcLoanTransactionMakeRepaymentBusinessEvent);
+
+        Map<String, Object> wcLoanCreditBalanceRefundTransactionBusinessEvent = new HashMap<>();
+        wcLoanCreditBalanceRefundTransactionBusinessEvent.put("type", "WorkingCapitalLoanCreditBalanceRefundTransactionBusinessEvent");
+        wcLoanCreditBalanceRefundTransactionBusinessEvent.put("enabled", false);
+        defaults.add(wcLoanCreditBalanceRefundTransactionBusinessEvent);
+
         Map<String, Object> loanTransactionMerchantIssuedRefundPostBusinessEvent = new HashMap<>();
         loanTransactionMerchantIssuedRefundPostBusinessEvent.put("type", "LoanTransactionMerchantIssuedRefundPostBusinessEvent");
         loanTransactionMerchantIssuedRefundPostBusinessEvent.put("enabled", false);
@@ -683,6 +693,11 @@ public class ExternalEventConfigurationHelper {
         savingsAccountForceWithdrawalBusinessEvent.put("type", "SavingsAccountForceWithdrawalBusinessEvent");
         savingsAccountForceWithdrawalBusinessEvent.put("enabled", false);
         defaults.add(savingsAccountForceWithdrawalBusinessEvent);
+
+        Map<String, Object> workingCapitalLoanDiscountDisbursalTransactionBusinessEvent = new HashMap<>();
+        workingCapitalLoanDiscountDisbursalTransactionBusinessEvent.put("type", "WorkingCapitalLoanDiscountFeeTransactionBusinessEvent");
+        workingCapitalLoanDiscountDisbursalTransactionBusinessEvent.put("enabled", false);
+        defaults.add(workingCapitalLoanDiscountDisbursalTransactionBusinessEvent);
 
         return defaults;
     }

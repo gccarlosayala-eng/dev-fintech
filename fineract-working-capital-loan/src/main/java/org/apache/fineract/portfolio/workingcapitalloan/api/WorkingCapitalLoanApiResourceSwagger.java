@@ -48,6 +48,7 @@ public final class WorkingCapitalLoanApiResourceSwagger {
         public Collection<WorkingCapitalLoanProductApiResourceSwagger.GetWorkingCapitalLoanProductsResponse.GetDelinquencyBucket> delinquencyBucketOptions;
         public List<StringEnumOptionData> periodFrequencyTypeOptions;
         public List<StringEnumOptionData> delinquencyStartTypeOptions;
+        public List<StringEnumOptionData> delinquencyMinimumPaymentTypeOptions;
         public List<WorkingCapitalLoanProductApiResourceSwagger.GetWorkingCapitalLoanProductsResponse.GetWorkingCapitalLoanBreach> breachOptions;
     }
 
@@ -194,6 +195,7 @@ public final class WorkingCapitalLoanApiResourceSwagger {
         public BigDecimal discount;
         @Schema(description = "Working capital breach)")
         public WorkingCapitalLoanProductApiResourceSwagger.GetWorkingCapitalLoanProductsResponse.GetWorkingCapitalLoanBreach breach;
+        public WorkingCapitalLoanProductApiResourceSwagger.GetWorkingCapitalLoanNearBreach nearBreach;
         public WorkingCapitalLoanProductApiResourceSwagger.GetWorkingCapitalLoanProductsResponse.GetDelinquencyBucket delinquencyBucket;
         @Schema(example = "3", description = "Number of grace days before delinquency tracking starts")
         public Integer delinquencyGraceDays;
@@ -229,6 +231,8 @@ public final class WorkingCapitalLoanApiResourceSwagger {
         public java.math.BigDecimal realizedIncome;
         @Schema(example = "0.00")
         public java.math.BigDecimal unrealizedIncome;
+        @Schema(example = "0.00")
+        public java.math.BigDecimal overpaymentAmount;
     }
 
     @Schema(description = "Single disbursement detail (expected and actual)")
@@ -317,6 +321,8 @@ public final class WorkingCapitalLoanApiResourceSwagger {
         public BigDecimal discount;
         @Schema(example = "1")
         public Long breachId;
+        @Schema(example = "1")
+        public Long nearBreachId;
         @Schema(example = "1")
         public Long delinquencyBucketId;
         @Schema(example = "3")
@@ -423,6 +429,8 @@ public final class WorkingCapitalLoanApiResourceSwagger {
         @Schema(example = "1")
         public Long breachId;
         @Schema(example = "1")
+        public Long nearBreachId;
+        @Schema(example = "1")
         public Long delinquencyBucketId;
         @Schema(example = "3")
         public Integer delinquencyGraceDays;
@@ -466,10 +474,16 @@ public final class WorkingCapitalLoanApiResourceSwagger {
         public Long clientId;
         @Schema(example = "3")
         public Long loanId;
+        @Schema(example = "95174ff9-1a75-4d72-a413-6f9b1cb988b7")
+        public String loanExternalId;
         @Schema(example = "3")
         public Long resourceId;
         @Schema(example = "95174ff9-1a75-4d72-a413-6f9b1cb988b7")
         public String resourceExternalId;
+        @Schema(example = "3")
+        public Long subResourceId;
+        @Schema(example = "95174ff9-1a75-4d72-a413-6f9b1cb988b7")
+        public String subResourceExternalId;
         public Object changes;
     }
 
@@ -504,6 +518,8 @@ public final class WorkingCapitalLoanApiResourceSwagger {
         public String externalId;
         @Schema(description = "Payment details (Account No, Cheque No, Routing Code, Receipt No, Bank code)")
         public PostWorkingCapitalLoansLoanIdDisbursementPaymentDetails paymentDetails;
+        @Schema(description = "Related resource ID for transaction, e.g., related transaction ID")
+        public Long relatedResourceId;
     }
 
     @Schema(description = "Request for updating discount on a disbursed Working Capital Loan")
